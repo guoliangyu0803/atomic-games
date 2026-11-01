@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>电子轨道运动磁矩 · 闯关</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0b1020;--card:#151d36;--card2:#1b2542;--line:#2a3556;
+    --txt:#e9eefc;--muted:#93a2c7;--teal:#2dd4bf;--gold:#f6c453;
+    --red:#fb7185;--green:#34d399;--blue:#60a5fa;--violet:#a78bfa;
+  }
+  html,body{margin:0;min-height:100%}
+  body{
+    background:radial-gradient(1100px 560px at 50% -12%,#1e2c52,#0b1020 62%);
+    color:var(--txt);font-family:'Segoe UI','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+  .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .back{color:var(--muted);text-decoration:none;font-size:13.5px;border:1px solid var(--line);padding:6px 11px;border-radius:10px}
+  .back:hover{color:var(--txt);border-color:#3c5185}
+  h1{font-size:19px;margin:0;flex:1;min-width:140px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--muted)}
+  .chip b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  .steps{display:flex;gap:8px;margin-bottom:14px}
+  .step{height:6px;flex:1;border-radius:99px;background:#1d2643;transition:background .3s}
+  .step.done{background:linear-gradient(90deg,#2dd4bf,#60a5fa)}
+  .step.cur{background:linear-gradient(90deg,#f6c453,#f59e0b)}
+
+  .panel{background:linear-gradient(180deg,var(--card),#121a30);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .qh{font-size:12px;letter-spacing:.16em;color:var(--teal);text-transform:uppercase;margin-bottom:8px}
+  .qt{font-size:15px;line-height:1.85;color:var(--txt);margin:0}
+  .qt code,.mono{font-family:Consolas,'Courier New',monospace;background:#0d1428;border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;font-size:13.5px;color:#a5f3ea}
+  .formula{
+    background:#0d1428;border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    margin:14px 0;font-family:Consolas,monospace;font-size:14px;color:#a5f3ea;line-height:2.1;overflow-x:auto;
+  }
+  .formula .dim{color:#7c8cb8;font-size:12.5px}
+
+  .choices{display:grid;gap:10px;margin-top:16px}
+  .choice{
+    text-align:left;appearance:none;border:1px solid var(--line);background:#101830;color:#cfd9f0;
+    border-radius:12px;padding:14px 16px;font-size:14.5px;cursor:pointer;font-family:inherit;
+    transition:.15s;line-height:1.6;
+  }
+  .choice:hover:not(:disabled){border-color:#3c5185;background:#152040;color:#fff}
+  .choice.ok{border-color:#2f9e83;background:#0f3b30;color:#a7f3d0}
+  .choice.no{border-color:#7f2d3d;background:#3a1420;color:#fecdd3}
+  .choice:disabled{cursor:default}
+
+  .rows{margin:16px 0 6px;display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#101830;
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+  .row .lab{flex:1;min-width:180px;font-size:14px;color:#cfd9f0;font-family:Consolas,monospace}
+  .row input{
+    background:#0b1224;border:1px solid var(--line);color:var(--txt);border-radius:9px;
+    padding:9px 11px;font-size:15px;width:150px;font-family:Consolas,monospace;
+  }
+  .row input.wide{width:230px}
+  .row input:focus{outline:none;border-color:var(--teal)}
+  .row .unit{color:var(--muted);font-size:13px;white-space:nowrap}
+  .row.right{border-color:#1f6f5c;background:#0c2a25}
+  .row.right input{border-color:#2f9e83;color:#a7f3d0}
+  .row.wrong{border-color:#7f2d3d;background:#2a1018}
+  .row .mark{width:18px;text-align:center}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 4px}
+  canvas{display:block;width:100%;border-radius:12px;background:#0a1122;border:1px solid var(--line)}
+  .cap{color:#6b7ba4;font-size:12.5px;margin:8px 2px 0}
+
+  .fb{margin-top:14px;border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.75;
+    border:1px solid var(--line);background:#0f1730;color:var(--muted);min-height:22px}
+  .fb.ok{border-color:#1f6f5c;background:#0c2a25;color:#a7f3d0}
+  .fb.bad{border-color:#7f2d3d;background:#2a1018;color:#fecdd3}
+
+  .btn{
+    appearance:none;border:1px solid transparent;border-radius:12px;padding:11px 20px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+    background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04211d;transition:.15s;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.08)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--txt)}
+  .btn.ghost:hover{border-color:#3c5185}
+
+  .modal{position:fixed;inset:0;background:rgba(6,10,20,.74);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .modal.show{display:flex}
+  .modal .box{background:var(--card2);border:1px solid var(--line);border-radius:18px;
+    max-width:610px;width:100%;padding:24px;max-height:86vh;overflow:auto}
+  .modal h2{margin:0 0 12px;font-size:19px}
+  .modal .body{color:#cfd9f0;font-size:14px;line-height:1.9}
+  .modal .body ul{margin:8px 0 0;padding-left:20px}
+  .modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  .big{font-size:26px;font-weight:800;color:var(--teal);margin:6px 0 2px}
+  .kv{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+  .kvr{background:#101830;border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+    font-size:13px;font-family:Consolas,monospace;color:#cfd9f0;display:flex;justify-content:space-between;gap:10px}
+  .kvr b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 合集</a>
+    <h1>🌀 电子轨道运动磁矩</h1>
+    <div class="hud">
+      <span class="chip">第 <b id="hudLv">1</b> / 4 关</span>
+      <span class="chip">用时 <b id="hudTime">00:00</b></span>
+      <span class="chip">得分 <b id="hudScore">0</b></span>
+    </div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step cur"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+  </div>
+
+  <div id="stage"></div>
+  <div class="fb" id="fb">绕核转动的电子相当于一个环形电流，于是有了磁矩。</div>
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $('stage'), fb = $('fb'), modal = $('modal'), modalBox = $('modalBox');
+  var S = { lv: 0, score: 0, wrongInLv: 0, t0: Date.now() };
+
+  function setFb(msg, kind) { fb.innerHTML = msg; fb.className = 'fb' + (kind ? ' ' + kind : ''); }
+  function setHud() {
+    $('hudLv').textContent = Math.min(S.lv + 1, 4);
+    $('hudScore').textContent = S.score;
+    var steps = $('steps').children;
+    for (var i = 0; i < steps.length; i++) {
+      steps[i].className = 'step' + (i < S.lv ? ' done' : (i === S.lv ? ' cur' : ''));
+    }
+  }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var s = Math.floor((Date.now() - S.t0) / 1000);
+    $('hudTime').textContent = pad2(Math.floor(s / 60)) + ':' + pad2(s % 60);
+  }
+  setInterval(tick, 500); tick();
+
+  function showModal(html, actions) {
+    modalBox.innerHTML = html + '<div class="acts" id="mActs"></div>';
+    var acts = $('mActs');
+    (actions || []).forEach(function (a) {
+      var b = document.createElement('button');
+      b.className = 'btn' + (a.ghost ? ' ghost' : '');
+      b.textContent = a.label;
+      b.onclick = function () { if (a.fn) a.fn(); };
+      acts.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
+  function closeModal() { modal.classList.remove('show'); }
+  function addScore(full) {
+    var gain = Math.max(2, full - 2 * S.wrongInLv);
+    S.score += gain; setHud(); return gain;
+  }
+  function goto(lv) {
+    S.lv = lv; S.wrongInLv = 0; setHud();
+    if (lv === 0) renderL1();
+    else if (lv === 1) renderL2();
+    else if (lv === 2) renderL3();
+    else renderL4();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function num(s) {
+    if (s == null) return NaN;
+    s = String(s).trim().replace(/[−–—]/g, '-').replace(/[，,]/g, '');
+    var m = s.match(/^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);
+    if (m) return parseFloat(m[1]) / parseFloat(m[2]);
+    return parseFloat(s);
+  }
+  function parseList(s) {
+    return String(s || '').split(/[,，、;；\s]+/).filter(function (x) { return x.trim() !== ''; }).map(num);
+  }
+  function sameSet(a, b, tol) {
+    if (a.length !== b.length || a.some(function (v) { return !isFinite(v); })) return false;
+    var x = a.slice().sort(function (p, q) { return p - q; });
+    var y = b.slice().sort(function (p, q) { return p - q; });
+    for (var i = 0; i < x.length; i++) if (Math.abs(x[i] - y[i]) > tol) return false;
+    return true;
+  }
+
+  // ============ 第 1 关：方向关系 ============
+  function renderL1() {
+    var opts = [
+      'μ<sub>l</sub> 与 p<sub>l</sub> 同向',
+      'μ<sub>l</sub> 与 p<sub>l</sub> 反向',
+      'μ<sub>l</sub> 与 p<sub>l</sub> 垂直',
+      '两者没有固定关系'
+    ];
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 1 关 · 那个负号</div>' +
+        '<p class="qt">矢量式写作 <span class="mono">μ<sub>l</sub> = −(e/2m) p<sub>l</sub></span>。' +
+        '这个负号说明轨道磁矩与轨道角动量是什么关系？</p>' +
+        '<div class="choices">' +
+          opts.map(function (o, i) { return '<button class="choice" data-i="' + i + '">' + o + '</button>'; }).join('') +
+        '</div>' +
+      '</div>';
+
+    stage.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i;
+        if (i === 1) {
+          b.classList.add('ok');
+          stage.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+          var gain = addScore(5);
+          setFb('✓ 正确。负号来自电子的电荷是 <b>−e</b>：把 q = −e 代进 μ = (q/2m)p，方向就反过来。' +
+                '这也是为什么磁矩和角动量永远"对着干"。+' + gain + ' 分。', 'ok');
+          setTimeout(function () { goto(1); }, 1500);
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 800);
+          setFb('✗ 注意式子里那个负号。电子带负电，转起来的"电流方向"和运动方向相反。', 'bad');
+        }
+      };
+    });
+    setFb('提示：负号不是笔误。');
+  }
+
+  // ============ 第 2 关：算 μ_l ============
+  function renderL2() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 2 关 · 轨道磁矩的大小</div>' +
+        '<p class="qt">由 <span class="mono">p<sub>l</sub> = √(l(l+1)) ħ</span> 得：</p>' +
+        '<div class="formula">' +
+          'μ<sub>l</sub> = (e/2m) p<sub>l</sub> = (e/2m) √(l(l+1)) ħ = √(l(l+1)) μ<sub>B</sub><br>' +
+          '<span class="dim">μ<sub>B</sub> = ħe/2m = 0.92740×10⁻²³ A·m²　（玻尔磁子）</span>' +
+        '</div>' +
+        '<p class="qt">分别算出 l = 1 和 l = 2 时的 μ<sub>l</sub>（单位 μ<sub>B</sub>，保留两位小数）。</p>' +
+        '<div class="rows">' +
+          '<div class="row" id="r1"><span class="lab">l = 1 时 μ<sub>l</sub></span>' +
+            '<input type="text" inputmode="decimal" id="i1" placeholder="如 1.41" autocomplete="off">' +
+            '<span class="unit">μ<sub>B</sub></span><span class="mark"></span></div>' +
+          '<div class="row" id="r2"><span class="lab">l = 2 时 μ<sub>l</sub></span>' +
+            '<input type="text" inputmode="decimal" id="i2" placeholder="如 2.45" autocomplete="off">' +
+            '<span class="unit">μ<sub>B</sub></span><span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub">提交</button>' +
+          '<button class="btn ghost" id="hint">看提示</button></div>' +
+      '</div>';
+
+    $('hint').onclick = function () {
+      setFb('l = 1：√(1×2) = √2 ≈ 1.41；l = 2：√(2×3) = √6 ≈ 2.45。');
+    };
+    $('sub').onclick = check;
+    ['i1', 'i2'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') check(); });
+    });
+    setFb('注意：根号里是 l(l+1)，不是 l²。');
+
+    function check() {
+      var a = num($('i1').value), b = num($('i2').value);
+      var ok1 = isFinite(a) && Math.abs(a - 1.414) <= 0.05;
+      var ok2 = isFinite(b) && Math.abs(b - 2.449) <= 0.06;
+      $('r1').classList.toggle('right', ok1); $('r1').classList.toggle('wrong', !ok1);
+      $('r2').classList.toggle('right', ok2); $('r2').classList.toggle('wrong', !ok2);
+      if (ok1 && ok2) {
+        var gain = addScore(10);
+        setFb('✓ √2 ≈ 1.41，√6 ≈ 2.45。注意 l 变大时 μ<sub>l</sub> 也跟着变大，但永远到不了 l·μ<sub>B</sub>。' +
+              '+' + gain + ' 分。', 'ok');
+        setTimeout(function () { goto(2); }, 1500);
+      } else {
+        S.wrongInLv++;
+        setFb('✗ 再算算：l = 1 是 √2，l = 2 是 √6。', 'bad');
+      }
+    }
+  }
+
+  // ============ 第 3 关：空间取向量子化 ============
+  function renderL3() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 3 关 · 空间取向量子化</div>' +
+        '<p class="qt">在外磁场方向上，轨道磁矩的投影只能取离散值：</p>' +
+        '<div class="formula">' +
+          'μ<sub>lz</sub> = (e/2m) p<sub>lz</sub> = m<sub>l</sub> μ<sub>B</sub>　　' +
+          'm<sub>l</sub> = l, l−1, …, −l' +
+        '</div>' +
+        '<p class="qt">取 <b>l = 2</b>：它一共有几个取向？各取向的 μ<sub>lz</sub> 是多少 μ<sub>B</sub>？' +
+        '（用逗号分隔写成一行，顺序不限）</p>' +
+        '<div class="rows">' +
+          '<div class="row" id="rN"><span class="lab">取向个数</span>' +
+            '<input type="text" inputmode="numeric" id="iN" placeholder="填整数" autocomplete="off">' +
+            '<span class="unit">个</span><span class="mark"></span></div>' +
+          '<div class="row" id="rL"><span class="lab">各取向的 μ<sub>lz</sub></span>' +
+            '<input type="text" class="wide" id="iL" placeholder="如 1,0,-1" autocomplete="off">' +
+            '<span class="unit">μ<sub>B</sub></span><span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub">提交</button>' +
+          '<button class="btn ghost" id="hint">看提示</button></div>' +
+      '</div>';
+
+    $('hint').onclick = function () {
+      setFb('m<sub>l</sub> 从 +l 一格一格降到 −l，中间不能跳，所以个数是 2l+1 = 5。' +
+            'μ<sub>lz</sub> 就是 m<sub>l</sub> 乘 μ<sub>B</sub>。');
+    };
+    $('sub').onclick = check;
+    ['iN', 'iL'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') check(); });
+    });
+    setFb('先数个数，再写取值。负号别丢。');
+
+    function check() {
+      var n = num($('iN').value);
+      var list = parseList($('iL').value);
+      var ok1 = n === 5;
+      var ok2 = sameSet(list, [2, 1, 0, -1, -2], 0.001);
+      $('rN').classList.toggle('right', ok1); $('rN').classList.toggle('wrong', !ok1);
+      $('rL').classList.toggle('right', ok2); $('rL').classList.toggle('wrong', !ok2);
+      if (ok1 && ok2) {
+        var gain = addScore(12);
+        setFb('✓ l = 2 时 m<sub>l</sub> = 2,1,0,−1,−2，共 <b>2l+1 = 5</b> 个取向，' +
+              'μ<sub>lz</sub> = 2,1,0,−1,−2 μ<sub>B</sub>。+' + gain + ' 分。', 'ok');
+        setTimeout(function () { goto(3); }, 1600);
+      } else {
+        S.wrongInLv++;
+        setFb('✗ 个数用 2l+1 算；取值从 +2 一路到 −2，中间的 0 别漏。', 'bad');
+      }
+    }
+  }
+
+  // ============ 第 4 关：圆锥模型 ============
+  function fitCanvas(cv, cssH) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = cv.getBoundingClientRect();
+    var w = Math.max(280, rect.width || cv.clientWidth || 600);
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(cssH * dpr);
+    cv.style.height = cssH + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: cssH };
+  }
+
+  function drawCones() {
+    var cv = $('cv'); if (!cv) return;
+    var f = fitCanvas(cv, 430), ctx = f.ctx, w = f.w;
+    ctx.clearRect(0, 0, w, 440);
+
+    var l = 2, R = 150;
+    var ox = Math.max(120, w / 2 - 95), oy = 252;
+    var ml = [2, 1, 0, -1, -2];
+    var norm = Math.sqrt(l * (l + 1));          // √6
+    var colors = ['#60a5fa', '#38bdf8', '#2dd4bf', '#f6c453', '#fb7185'];
+
+    // z 轴
+    ctx.strokeStyle = '#39456b'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ox, oy + 78); ctx.lineTo(ox, oy - R - 42); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ox, oy - R - 50); ctx.lineTo(ox - 5, oy - R - 38); ctx.lineTo(ox + 5, oy - R - 38);
+    ctx.closePath(); ctx.fillStyle = '#39456b'; ctx.fill();
+    ctx.fillStyle = '#7c8cb8'; ctx.font = '13px Consolas, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('z（外磁场方向）', ox + 10, oy - R - 46);
+
+    ml.forEach(function (m, i) {
+      var cosT = m / norm;
+      var theta = Math.acos(Math.max(-1, Math.min(1, cosT)));
+      var x = R * Math.sin(theta);
+      var y = -R * Math.cos(theta);
+      var col = colors[i];
+
+      // 投影虚线：从箭头端点水平连到 z 轴
+      ctx.save();
+      ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(120,135,175,.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(ox + x, oy + y); ctx.lineTo(ox, oy + y); ctx.stroke();
+      ctx.restore();
+
+      // 向量
+      var ang = Math.atan2(y, x);
+      ctx.strokeStyle = col; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + x, oy + y); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(ox + x, oy + y);
+      ctx.lineTo(ox + x - 10 * Math.cos(ang - 0.4), oy + y - 10 * Math.sin(ang - 0.4));
+      ctx.lineTo(ox + x - 10 * Math.cos(ang + 0.4), oy + y - 10 * Math.sin(ang + 0.4));
+      ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+
+      // z 轴上的投影标值
+      ctx.fillStyle = '#8fa0c8'; ctx.font = '11.5px Consolas, monospace';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(m + 'μ_B', ox - 8, oy + y);
+
+      // 向量标签
+      ctx.fillStyle = col; ctx.font = '700 12.5px Consolas, monospace';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('m=' + m, ox + x + 12, oy + y - 8);
+      ctx.fillStyle = '#9fb0d8'; ctx.font = '11px Consolas, monospace';
+      ctx.fillText('θ=' + (theta * 180 / Math.PI).toFixed(1) + '°', ox + x + 12, oy + y + 9);
+    });
+
+    ctx.fillStyle = '#7c8cb8'; ctx.font = '12px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('每条向量长度都是 |μ_l| = √6 μ_B，只是方向不同', 12, 10);
+    ctx.fillText('端点落到 z 轴上的位置，就是 μ_lz = m_l μ_B（只有 5 个离散值）', 12, 30);
+  }
+
+  function renderL4() {
+    var opts = [
+      '只有 1 种（都平行于 z 轴）',
+      '只有 2 种（向上、向下）',
+      '5 种，与 m<sub>l</sub> 的 5 个取值一一对应',
+      '无穷多种，可以连续取值'
+    ];
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 4 关 · 圆锥模型</div>' +
+        '<p class="qt">把 l = 2 时 μ<sub>l</sub> 的所有可能方向画出来（长度都是 √6 μ<sub>B</sub>）：' +
+        '它们与 z 轴的夹角有几种不同的取值？</p>' +
+        '<canvas id="cv"></canvas>' +
+        '<p class="cap">灰色虚线是 μ<sub>lz</sub> 在 z 轴上的投影。</p>' +
+        '<div class="choices">' +
+          opts.map(function (o, i) { return '<button class="choice" data-i="' + i + '">' + o + '</button>'; }).join('') +
+        '</div>' +
+      '</div>';
+
+    drawCones();
+    window.addEventListener('resize', function () { if (S.lv === 3) drawCones(); });
+
+    stage.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i;
+        if (i === 2) {
+          b.classList.add('ok');
+          stage.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+          var gain = addScore(15);
+          setFb('✓ 正确。夹角由 cos θ = m<sub>l</sub>/√(l(l+1)) 决定，m<sub>l</sub> 有 2l+1 个值，' +
+                '所以夹角也只有 5 种——这就是"空间取向量子化"。+' + gain + ' 分。', 'ok');
+          setTimeout(finish, 1400);
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 800);
+          setFb('✗ 数一数图里有几条不同方向的线。它们不是只朝上下，' +
+                '而是处在 5 个不同的锥面上。', 'bad');
+        }
+      };
+    });
+    setFb('提示：m<sub>l</sub> 有几个取值，就有几个不同的锥面。');
+  }
+
+  // ============ 结算 ============
+  function finish() {
+    showModal(
+      '<h2>🏆 通关！轨道磁矩小结</h2>' +
+      '<div class="body">' +
+        '<div class="big">' + S.score + ' 分</div>' +
+        '<div class="kv">' +
+          '<div class="kvr"><span>矢量关系</span><b>μ<sub>l</sub> = −(e/2m) p<sub>l</sub></b></div>' +
+          '<div class="kvr"><span>大小</span><b>√(l(l+1)) μ<sub>B</sub></b></div>' +
+          '<div class="kvr"><span>玻尔磁子</span><b>0.92740×10⁻²³ A·m²</b></div>' +
+          '<div class="kvr"><span>空间取向量子化</span><b>μ<sub>lz</sub> = m<sub>l</sub> μ<sub>B</sub>，2l+1 个</b></div>' +
+        '</div>' +
+        '<p style="margin-top:14px">注意 μ<sub>lz</sub> 总是 μ<sub>B</sub> 的<b>整数倍</b>——' +
+          '也就是说，轨道磁矩的投影最小只能变化一个 μ<sub>B</sub>。</p>' +
+        '<p style="color:#93a2c7">下一个问题：斯特恩-盖拉赫实验测到的银原子只有 ±1 μ<sub>B</sub> 两个值，' +
+          '而且没法用轨道磁矩解释——这就需要<b>自旋磁矩</b>了。</p>' +
+      '</div>',
+      [
+        { label: '看自旋磁矩', fn: function () { closeModal(); location.href = 'spin.html'; } },
+        { label: '回到合集', ghost: true, fn: function () { location.href = 'index.html'; } }
+      ]
+    );
+  }
+
+  function intro() {
+    showModal(
+      '<h2>🌀 情景：电子绕核转，就是个环形电流</h2>' +
+      '<div class="body">' +
+        '<p>一个带电粒子做圆周运动，等效于一个闭合电流环，于是产生磁矩。' +
+        '电子的轨道运动就是这样：<b>p<sub>l</sub></b> 是角动量，<b>μ<sub>l</sub></b> 是它带来的磁矩。</p>' +
+        '<p style="margin-bottom:6px">四关任务：</p>' +
+        '<ul>' +
+          '<li><b>1</b>　理解式子里那个负号从哪来</li>' +
+          '<li><b>2</b>　算 μ<sub>l</sub> = √(l(l+1)) μ<sub>B</sub></li>' +
+          '<li><b>3</b>　μ<sub>lz</sub> = m<sub>l</sub> μ<sub>B</sub>，取向数 2l+1</li>' +
+          '<li><b>4</b>　从圆锥模型看"空间取向量子化"</li>' +
+        '</ul>' +
+      '</div>',
+      [{ label: '开始闯关', fn: function () { closeModal(); goto(0); } }]
+    );
+  }
+
+  setHud();
+  var deepLv = parseInt(new URLSearchParams(location.search).get('lv'), 10);
+  if (deepLv >= 1 && deepLv <= 4) goto(deepLv - 1);
+  else intro();
+})();
+</script>
+</body>
+</html>
