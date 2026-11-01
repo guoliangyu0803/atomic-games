@@ -42,12 +42,14 @@
   }
   .formula .dim{color:#7c8cb8;font-size:12.5px}
 
-  .choices{display:grid;gap:10px;margin-top:16px}
+  .choices{display:grid;gap:10px;margin-top:16px;min-width:0}
   .choice{
     text-align:left;appearance:none;border:1px solid var(--line);background:#101830;color:#cfd9f0;
     border-radius:12px;padding:14px 16px;font-size:14.5px;cursor:pointer;font-family:inherit;
-    transition:.15s;line-height:1.6;
+    transition:.15s;line-height:1.6;min-width:0;overflow-wrap:anywhere;
   }
+  .choice .fv,.choice .fm{display:block}
+  .choice .fm{color:#93a2c7;font-size:13px;margin-top:5px}
   .choice:hover:not(:disabled){border-color:#3c5185;background:#152040;color:#fff}
   .choice.ok{border-color:#2f9e83;background:#0f3b30;color:#a7f3d0}
   .choice.no{border-color:#7f2d3d;background:#3a1420;color:#fecdd3}
@@ -110,14 +112,14 @@
     <a class="back" href="index.html">← 合集</a>
     <h1>🌀 电子轨道运动磁矩</h1>
     <div class="hud">
-      <span class="chip">第 <b id="hudLv">1</b> / 4 关</span>
+      <span class="chip">第 <b id="hudLv">1</b> / 5 关</span>
       <span class="chip">用时 <b id="hudTime">00:00</b></span>
       <span class="chip">得分 <b id="hudScore">0</b></span>
     </div>
   </div>
 
   <div class="steps" id="steps">
-    <div class="step cur"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+    <div class="step cur"></div><div class="step"></div><div class="step"></div><div class="step"></div><div class="step"></div>
   </div>
 
   <div id="stage"></div>
@@ -136,7 +138,7 @@
 
   function setFb(msg, kind) { fb.innerHTML = msg; fb.className = 'fb' + (kind ? ' ' + kind : ''); }
   function setHud() {
-    $('hudLv').textContent = Math.min(S.lv + 1, 4);
+    $('hudLv').textContent = Math.min(S.lv + 1, 5);
     $('hudScore').textContent = S.score;
     var steps = $('steps').children;
     for (var i = 0; i < steps.length; i++) {
@@ -169,9 +171,10 @@
   }
   function goto(lv) {
     S.lv = lv; S.wrongInLv = 0; setHud();
-    if (lv === 0) renderL1();
-    else if (lv === 1) renderL2();
-    else if (lv === 2) renderL3();
+    if (lv === 0) renderL0();
+    else if (lv === 1) renderL1();
+    else if (lv === 2) renderL2();
+    else if (lv === 3) renderL3();
     else renderL4();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -193,7 +196,58 @@
     return true;
   }
 
-  // ============ 第 1 关：方向关系 ============
+  // ============ 第 1 关：认出正确的表达式 ============
+  function renderL0() {
+    var opts = [
+      ['−(e/2m) p<sub>l</sub>', '√(l(l+1)) μ<sub>B</sub>'],
+      ['−(e/m) p<sub>l</sub>', '√(l(l+1)) μ<sub>B</sub>'],
+      ['−(e/2m) p<sub>l</sub>', 'l μ<sub>B</sub>'],
+      ['+(e/2m) p<sub>l</sub>', '√(l(l+1)) μ<sub>B</sub>']
+    ];
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 1 关 · 认出表达式</div>' +
+        '<p class="qt">下面四组写法里，只有一组是<b>电子轨道运动磁矩</b>的正确表达式。' +
+        '每组都同时给出了"矢量式"和"大小式"，请挑出全对的那一组。</p>' +
+        '<div class="choices">' +
+          opts.map(function (o, i) {
+            return '<button class="choice" data-i="' + i + '">' +
+              '<span class="fv">矢量式　μ<sub>l</sub> = ' + o[0] + '</span>' +
+              '<span class="fm">大小　　μ<sub>l</sub> = ' + o[1] + '</span>' +
+            '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+
+    stage.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i;
+        if (i === 0) {
+          b.classList.add('ok');
+          stage.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+          var gain = addScore(5);
+          setFb('✓ 正确。三处关键都对了：' +
+                '① 系数是 <b>e/2m</b>；② 前面有<b>负号</b>（电子带负电）；' +
+                '③ 大小是 <b>√(l(l+1)) μ<sub>B</sub></b>，不是 l μ<sub>B</sub>。+' + gain + ' 分。', 'ok');
+          setTimeout(function () { goto(1); }, 1600);
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 900);
+          var why = [
+            '',
+            '✗ 系数错了：e/m 是<b>自旋</b>的写法，轨道的分母里有 2。',
+            '✗ 大小错了：磁矩不等于 lμ<sub>B</sub>，根号里是 l(l+1)。',
+            '✗ 符号错了：电子带负电，磁矩与角动量方向相反，必须是负号。'
+          ][i] || '✗ 再想想。';
+          setFb(why, 'bad');
+        }
+      };
+    });
+    setFb('提示：矢量式看系数和符号，大小式看根号里是什么。');
+  }
+
+  // ============ 第 2 关：方向关系 ============
   function renderL1() {
     var opts = [
       'μ<sub>l</sub> 与 p<sub>l</sub> 同向',
@@ -203,7 +257,7 @@
     ];
     stage.innerHTML =
       '<div class="panel">' +
-        '<div class="qh">第 1 关 · 那个负号</div>' +
+        '<div class="qh">第 2 关 · 那个负号</div>' +
         '<p class="qt">矢量式写作 <span class="mono">μ<sub>l</sub> = −(e/2m) p<sub>l</sub></span>。' +
         '这个负号说明轨道磁矩与轨道角动量是什么关系？</p>' +
         '<div class="choices">' +
@@ -220,7 +274,7 @@
           var gain = addScore(5);
           setFb('✓ 正确。负号来自电子的电荷是 <b>−e</b>：把 q = −e 代进 μ = (q/2m)p，方向就反过来。' +
                 '这也是为什么磁矩和角动量永远"对着干"。+' + gain + ' 分。', 'ok');
-          setTimeout(function () { goto(1); }, 1500);
+          setTimeout(function () { goto(2); }, 1500);
         } else {
           S.wrongInLv++;
           b.classList.add('no');
@@ -232,11 +286,11 @@
     setFb('提示：负号不是笔误。');
   }
 
-  // ============ 第 2 关：算 μ_l ============
+  // ============ 第 3 关：算 μ_l ============
   function renderL2() {
     stage.innerHTML =
       '<div class="panel">' +
-        '<div class="qh">第 2 关 · 轨道磁矩的大小</div>' +
+        '<div class="qh">第 3 关 · 轨道磁矩的大小</div>' +
         '<p class="qt">由 <span class="mono">p<sub>l</sub> = √(l(l+1)) ħ</span> 得：</p>' +
         '<div class="formula">' +
           'μ<sub>l</sub> = (e/2m) p<sub>l</sub> = (e/2m) √(l(l+1)) ħ = √(l(l+1)) μ<sub>B</sub><br>' +
@@ -274,7 +328,7 @@
         var gain = addScore(10);
         setFb('✓ √2 ≈ 1.41，√6 ≈ 2.45。注意 l 变大时 μ<sub>l</sub> 也跟着变大，但永远到不了 l·μ<sub>B</sub>。' +
               '+' + gain + ' 分。', 'ok');
-        setTimeout(function () { goto(2); }, 1500);
+        setTimeout(function () { goto(3); }, 1500);
       } else {
         S.wrongInLv++;
         setFb('✗ 再算算：l = 1 是 √2，l = 2 是 √6。', 'bad');
@@ -282,11 +336,11 @@
     }
   }
 
-  // ============ 第 3 关：空间取向量子化 ============
+  // ============ 第 4 关：空间取向量子化 ============
   function renderL3() {
     stage.innerHTML =
       '<div class="panel">' +
-        '<div class="qh">第 3 关 · 空间取向量子化</div>' +
+        '<div class="qh">第 4 关 · 空间取向量子化</div>' +
         '<p class="qt">在外磁场方向上，轨道磁矩的投影只能取离散值：</p>' +
         '<div class="formula">' +
           'μ<sub>lz</sub> = (e/2m) p<sub>lz</sub> = m<sub>l</sub> μ<sub>B</sub>　　' +
@@ -327,7 +381,7 @@
         var gain = addScore(12);
         setFb('✓ l = 2 时 m<sub>l</sub> = 2,1,0,−1,−2，共 <b>2l+1 = 5</b> 个取向，' +
               'μ<sub>lz</sub> = 2,1,0,−1,−2 μ<sub>B</sub>。+' + gain + ' 分。', 'ok');
-        setTimeout(function () { goto(3); }, 1600);
+        setTimeout(function () { goto(4); }, 1600);
       } else {
         S.wrongInLv++;
         setFb('✗ 个数用 2l+1 算；取值从 +2 一路到 −2，中间的 0 别漏。', 'bad');
@@ -335,7 +389,7 @@
     }
   }
 
-  // ============ 第 4 关：圆锥模型 ============
+  // ============ 第 5 关：圆锥模型 ============
   function fitCanvas(cv, cssH) {
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     var rect = cv.getBoundingClientRect();
@@ -420,7 +474,7 @@
     ];
     stage.innerHTML =
       '<div class="panel">' +
-        '<div class="qh">第 4 关 · 圆锥模型</div>' +
+        '<div class="qh">第 5 关 · 圆锥模型</div>' +
         '<p class="qt">把 l = 2 时 μ<sub>l</sub> 的所有可能方向画出来（长度都是 √6 μ<sub>B</sub>）：' +
         '它们与 z 轴的夹角有几种不同的取值？</p>' +
         '<canvas id="cv"></canvas>' +
@@ -431,7 +485,7 @@
       '</div>';
 
     drawCones();
-    window.addEventListener('resize', function () { if (S.lv === 3) drawCones(); });
+    window.addEventListener('resize', function () { if (S.lv === 4) drawCones(); });
 
     stage.querySelectorAll('.choice').forEach(function (b) {
       b.onclick = function () {
@@ -485,12 +539,13 @@
       '<div class="body">' +
         '<p>一个带电粒子做圆周运动，等效于一个闭合电流环，于是产生磁矩。' +
         '电子的轨道运动就是这样：<b>p<sub>l</sub></b> 是角动量，<b>μ<sub>l</sub></b> 是它带来的磁矩。</p>' +
-        '<p style="margin-bottom:6px">四关任务：</p>' +
+        '<p style="margin-bottom:6px">五关任务：</p>' +
         '<ul>' +
-          '<li><b>1</b>　理解式子里那个负号从哪来</li>' +
-          '<li><b>2</b>　算 μ<sub>l</sub> = √(l(l+1)) μ<sub>B</sub></li>' +
-          '<li><b>3</b>　μ<sub>lz</sub> = m<sub>l</sub> μ<sub>B</sub>，取向数 2l+1</li>' +
-          '<li><b>4</b>　从圆锥模型看"空间取向量子化"</li>' +
+          '<li><b>1</b>　认出正确的表达式（矢量式 + 大小式）</li>' +
+          '<li><b>2</b>　理解式子里那个负号从哪来</li>' +
+          '<li><b>3</b>　算 μ<sub>l</sub> = √(l(l+1)) μ<sub>B</sub></li>' +
+          '<li><b>4</b>　μ<sub>lz</sub> = m<sub>l</sub> μ<sub>B</sub>，取向数 2l+1</li>' +
+          '<li><b>5</b>　从扇形图看"空间取向量子化"</li>' +
         '</ul>' +
       '</div>',
       [{ label: '开始闯关', fn: function () { closeModal(); goto(0); } }]
@@ -499,7 +554,7 @@
 
   setHud();
   var deepLv = parseInt(new URLSearchParams(location.search).get('lv'), 10);
-  if (deepLv >= 1 && deepLv <= 4) goto(deepLv - 1);
+  if (deepLv >= 1 && deepLv <= 5) goto(deepLv - 1);
   else intro();
 })();
 </script>
