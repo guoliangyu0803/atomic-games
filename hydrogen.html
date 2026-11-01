@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>氢原子光谱 · 能级闯关</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0b1020;--card:#151d36;--card2:#1b2542;--line:#2a3556;
+    --txt:#e9eefc;--muted:#93a2c7;--teal:#2dd4bf;--gold:#f6c453;
+    --red:#fb7185;--green:#34d399;--blue:#60a5fa;
+  }
+  html,body{margin:0;min-height:100%}
+  body{
+    background:radial-gradient(1100px 560px at 50% -12%,#1e2c52,#0b1020 62%);
+    color:var(--txt);font-family:'Segoe UI','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+  .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .back{color:var(--muted);text-decoration:none;font-size:13.5px;border:1px solid var(--line);padding:6px 11px;border-radius:10px}
+  .back:hover{color:var(--txt);border-color:#3c5185}
+  h1{font-size:19px;margin:0;flex:1;min-width:140px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--muted)}
+  .chip b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  .steps{display:flex;gap:8px;margin-bottom:14px}
+  .step{height:6px;flex:1;border-radius:99px;background:#1d2643;transition:background .3s}
+  .step.done{background:linear-gradient(90deg,#2dd4bf,#60a5fa)}
+  .step.cur{background:linear-gradient(90deg,#f6c453,#f59e0b)}
+
+  .panel{
+    background:linear-gradient(180deg,var(--card),#121a30);border:1px solid var(--line);
+    border-radius:16px;padding:20px;
+  }
+  .qh{font-size:12px;letter-spacing:.16em;color:var(--teal);text-transform:uppercase;margin-bottom:8px}
+  .qt{font-size:15px;line-height:1.85;color:var(--txt);margin:0 0 4px}
+  .qt code,.mono{font-family:Consolas,'Courier New',monospace;background:#0d1428;border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;font-size:13.5px;color:#a5f3ea}
+
+  .rows{margin:18px 0 6px;display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#101830;
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+  .row .lab{flex:1;min-width:180px;font-size:14px;color:#cfd9f0}
+  .row input{
+    background:#0b1224;border:1px solid var(--line);color:var(--txt);border-radius:9px;
+    padding:9px 11px;font-size:15px;width:118px;font-family:Consolas,monospace;
+  }
+  .row input:focus{outline:none;border-color:var(--teal)}
+  .row .unit{color:var(--muted);font-size:13px;width:34px}
+  .row.right{border-color:#1f6f5c;background:#0c2a25}
+  .row.right input{border-color:#2f9e83;color:#a7f3d0}
+  .row.wrong{border-color:#7f2d3d;background:#2a1018}
+  .row .mark{width:20px;text-align:center;font-size:15px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:16px}
+  .linecard{background:#101830;border:1px solid var(--line);border-radius:13px;padding:14px}
+  .linecard.done{border-color:#1f6f5c;background:#0c2a25}
+  .wave{font-family:Consolas,monospace;font-size:17px;font-weight:700;color:var(--gold);margin-bottom:10px}
+  .wave small{color:var(--muted);font-weight:400;font-size:12px;margin-left:4px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{
+    appearance:none;border:1px solid var(--line);background:#0d1428;color:#cfd9f0;
+    border-radius:9px;padding:7px 10px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .opt:hover:not(:disabled){border-color:#3c5185;color:#fff}
+  .opt:disabled{cursor:default;opacity:.45}
+  .opt.ok{background:#0f3b30;border-color:#2f9e83;color:#a7f3d0;opacity:1}
+  .opt.no{background:#3a1420;border-color:#7f2d3d;color:#fecdd3}
+  .linecard.done .opt{opacity:.35}
+  .linecard.done .opt.ok{opacity:1}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0 8px}
+  .toolbar .grp{display:flex;gap:6px;background:#0d1428;border:1px solid var(--line);border-radius:11px;padding:4px}
+  .toolbar .grp button{
+    appearance:none;border:0;background:transparent;color:var(--muted);border-radius:8px;
+    padding:7px 13px;font-size:13.5px;cursor:pointer;font-family:inherit;font-weight:600;
+  }
+  .toolbar .grp button.on{background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04211d}
+  .counter{margin-left:auto;color:var(--muted);font-size:13.5px}
+  .counter b{color:var(--teal)}
+
+  canvas{display:block;width:100%;border-radius:12px;background:#0a1122;border:1px solid var(--line)}
+  #cvLevel{cursor:pointer;touch-action:manipulation}
+  #cvSpec{margin-top:10px}
+  .cap{color:#6b7ba4;font-size:12.5px;margin:8px 2px 0}
+
+  .fb{margin-top:14px;border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.75;
+    border:1px solid var(--line);background:#0f1730;color:var(--muted);min-height:22px}
+  .fb.ok{border-color:#1f6f5c;background:#0c2a25;color:#a7f3d0}
+  .fb.bad{border-color:#7f2d3d;background:#2a1018;color:#fecdd3}
+
+  .btn{
+    appearance:none;border:1px solid transparent;border-radius:12px;padding:11px 20px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+    background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04211d;transition:.15s;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.08)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--txt)}
+  .btn.ghost:hover{border-color:#3c5185}
+
+  .modal{position:fixed;inset:0;background:rgba(6,10,20,.74);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .modal.show{display:flex}
+  .modal .box{background:var(--card2);border:1px solid var(--line);border-radius:18px;
+    max-width:580px;width:100%;padding:24px;max-height:86vh;overflow:auto}
+  .modal h2{margin:0 0 12px;font-size:19px}
+  .modal .body{color:#cfd9f0;font-size:14px;line-height:1.9}
+  .modal .body ul{margin:8px 0 0;padding-left:20px}
+  .modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  .rep{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .repline{background:#101830;border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+    font-size:13px;font-family:Consolas,monospace;color:#cfd9f0}
+  .repline b{color:var(--gold)}
+  .big{font-size:26px;font-weight:800;color:var(--teal);margin:6px 0 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 合集</a>
+    <h1>🔬 氢原子光谱 · 能级闯关</h1>
+    <div class="hud">
+      <span class="chip">第 <b id="hudLv">1</b> / 3 关</span>
+      <span class="chip">用时 <b id="hudTime">00:00</b></span>
+      <span class="chip">得分 <b id="hudScore">0</b></span>
+    </div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step cur"></div><div class="step"></div><div class="step"></div>
+  </div>
+
+  <div id="stage"></div>
+  <div class="fb" id="fb">思路：先算能量，再算波长，最后自己画跃迁。</div>
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 物理常量与公式 ----------
+  var RY = 1.097373e7;                                  // 里德伯常量 m^-1
+  var E  = function (n) { return -13.6 / (n * n); };     // 能级 eV
+  var lambdaNm = function (nf, ni) {                     // 跃迁波长 nm
+    return 1e9 / (RY * (1 / (nf * nf) - 1 / (ni * ni)));
+  };
+
+  var SERIES = [
+    { key: 'Lyman',    name: '莱曼系',   nf: 1 },
+    { key: 'Balmer',   name: '巴尔末系', nf: 2 },
+    { key: 'Paschen',  name: '帕邢系',   nf: 3 },
+    { key: 'Brackett', name: '布喇开系', nf: 4 },
+    { key: 'Pfund',    name: '普丰特系', nf: 5 }
+  ];
+
+  var S = { lv: 0, score: 0, wrongInLv: 0, t0: Date.now(), timer: null };
+  var L3 = { nmax: 4, drawn: {}, pairs: [], sel: null, flash: null };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $('stage'), fb = $('fb'), modal = $('modal'), modalBox = $('modalBox');
+
+  // ---------- 通用 UI ----------
+  function setFb(msg, kind) {
+    fb.textContent = msg;
+    fb.className = 'fb' + (kind ? ' ' + kind : '');
+  }
+  function setHud() {
+    $('hudLv').textContent = Math.min(S.lv + 1, 3);
+    $('hudScore').textContent = S.score;
+    var steps = $('steps').children;
+    for (var i = 0; i < steps.length; i++) {
+      steps[i].className = 'step' + (i < S.lv ? ' done' : (i === S.lv ? ' cur' : ''));
+    }
+  }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function tickClock() {
+    var s = Math.floor((Date.now() - S.t0) / 1000);
+    $('hudTime').textContent = pad2(Math.floor(s / 60)) + ':' + pad2(s % 60);
+  }
+  S.timer = setInterval(tickClock, 500);
+  tickClock();
+
+  function showModal(html, actions) {
+    modalBox.innerHTML = html + '<div class="acts" id="mActs"></div>';
+    var acts = $('mActs');
+    if (actions && actions.length) {
+      actions.forEach(function (a) {
+        var b = document.createElement('button');
+        b.className = 'btn' + (a.ghost ? ' ghost' : '');
+        b.textContent = a.label;
+        b.onclick = function () { if (a.fn) a.fn(); };
+        acts.appendChild(b);
+      });
+    }
+    modal.classList.add('show');
+  }
+  function closeModal() { modal.classList.remove('show'); }
+
+  function addScore(full) {
+    var gain = Math.max(2, full - 2 * S.wrongInLv);
+    S.score += gain;
+    setHud();
+    return gain;
+  }
+
+  // ---------- 关卡路由 ----------
+  function goto(lv) {
+    S.lv = lv; S.wrongInLv = 0;
+    setHud();
+    if (lv === 0) renderL1();
+    else if (lv === 1) renderL2();
+    else renderL3();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ================= 第 1 关：从公式算起 =================
+  var L1 = [
+    { id: 'a', lab: '基态能量 E<sub>1</sub>',               ans: -13.6, tol: 0.06, unit: 'eV', tip: '把 n=1 代进 E = −13.6/n²。' },
+    { id: 'b', lab: '第一激发态能量 E<sub>2</sub>',          ans: -3.40, tol: 0.06, unit: 'eV', tip: 'n=2 时 E = −13.6/4。' },
+    { id: 'c', lab: '2 → 1 跃迁的波长 λ',                   ans: 121.6, tol: 3.0,  unit: 'nm', tip: 'ΔE = 10.2 eV，用 λ = hc/ΔE 或里德伯公式，注意 1 nm = 10⁻⁹ m。' }
+  ];
+
+  function renderL1() {
+    var rows = L1.map(function (q, i) {
+      return '<div class="row" id="r1_' + q.id + '">' +
+        '<span class="lab">' + (i + 1) + '. ' + q.lab + '</span>' +
+        '<input type="text" inputmode="decimal" id="i1_' + q.id + '" autocomplete="off" placeholder="填数值">' +
+        '<span class="unit">' + q.unit + '</span>' +
+        '<span class="mark" id="m1_' + q.id + '"></span>' +
+      '</div>';
+    }).join('');
+
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 1 关 · 从公式算起</div>' +
+        '<p class="qt">氢原子能级：<code>E<sub>n</sub> = −13.6 / n²</code>（eV）。' +
+        '跃迁波长的里德伯公式：<code>1/λ = R (1/n<sub>f</sub>² − 1/n<sub>i</sub>²)</code>，' +
+        '其中 <code>R = 1.097×10⁷ m⁻¹</code>。' +
+        '算出下面三个量（波长保留一位小数即可）。</p>' +
+        '<div class="rows">' + rows + '</div>' +
+        '<div class="toolbar"><button class="btn" id="l1sub">提交答案</button>' +
+        '<button class="btn ghost" id="l1hint">看提示</button></div>' +
+      '</div>';
+
+    $('l1sub').onclick = checkL1;
+    $('l1hint').onclick = function () {
+      setFb('提示：E₁ = −13.6 eV，E₂ = −13.6/4 = −3.40 eV；两者之差 ΔE = 10.2 eV。' +
+            '波长用 λ(nm) = 1240 / ΔE(eV) 近似算得最快。');
+    };
+    ['a', 'b', 'c'].forEach(function (k) {
+      $('i1_' + k).addEventListener('keydown', function (e) { if (e.key === 'Enter') checkL1(); });
+    });
+    setFb('三个空都填对才能过关，答错可以重填，不会清零。');
+  }
+
+  function checkL1() {
+    var allOk = true;
+    L1.forEach(function (q) {
+      var inp = $('i1_' + q.id), row = $('r1_' + q.id), mark = $('m1_' + q.id);
+      var raw = inp.value.trim().replace(/[，,]/g, '').replace(/[−–]/g, '-');
+      var v = parseFloat(raw);
+      // 手机数字键盘常常打不出负号：能量项填绝对值也算对
+      var ok = isFinite(v) &&
+               (Math.abs(v - q.ans) <= q.tol ||
+                (q.ans < 0 && Math.abs(v + q.ans) <= q.tol));
+      row.classList.remove('right', 'wrong');
+      if (ok) {
+        row.classList.add('right'); mark.textContent = '✓'; inp.disabled = true;
+      } else {
+        row.classList.add('wrong'); mark.textContent = ''; allOk = false;
+      }
+    });
+
+    if (allOk) {
+      var gain = addScore(10);
+      document.querySelectorAll('.row').forEach(function (r) { r.classList.remove('wrong'); });
+      setFb('✓ 全对！E₁ = −13.60 eV，E₂ = −3.40 eV，λ(2→1) ≈ 121.6 nm（莱曼 α 线，紫外）。本关 +' + gain + ' 分。', 'ok');
+      setTimeout(function () { goto(1); }, 1200);
+    } else {
+      S.wrongInLv++;
+      setFb('还有空不对。注意单位和正负号：能量是负值，波长是正数（nm）。', 'bad');
+    }
+  }
+
+  // ================= 第 2 关：谱线归线系 =================
+  var L2_LINES = [
+    { nm: 121.6, s: 'Lyman',    note: '紫外' },
+    { nm: 656.3, s: 'Balmer',   note: '红' },
+    { nm: 1875,  s: 'Paschen',  note: '近红外' },
+    { nm: 4051,  s: 'Brackett', note: '红外' },
+    { nm: 7460,  s: 'Pfund',    note: '远红外' }
+  ];
+  var L2done = {};
+
+  function renderL2() {
+    var cards = L2_LINES.map(function (l, idx) {
+      var opts = SERIES.map(function (s) {
+        return '<button class="opt" data-i="' + idx + '" data-s="' + s.key + '">' + s.name + '</button>';
+      }).join('');
+      return '<div class="linecard" id="lc' + idx + '">' +
+        '<div class="wave">' + l.nm + ' nm<small>' + l.note + '</small></div>' +
+        '<div class="opts">' + opts + '</div>' +
+      '</div>';
+    }).join('');
+
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 2 关 · 谱线归线系</div>' +
+        '<p class="qt">线系由<b>末态</b>决定：莱曼系落到 n=1，巴尔末系落到 n=2，帕邢系 n=3，布喇开系 n=4，普丰特系 n=5。' +
+        '把下面 5 条谱线分别点进它所属的线系。</p>' +
+        '<div class="cards">' + cards + '</div>' +
+      '</div>';
+
+    stage.querySelectorAll('.opt').forEach(function (b) {
+      b.onclick = function () { pickSeries(b); };
+    });
+    L2done = {};
+    setFb('提示：波长越短，跃迁的能差越大，通常落到的 n 越小。');
+  }
+
+  function pickSeries(btn) {
+    var idx = +btn.dataset.i, sKey = btn.dataset.s;
+    var line = L2_LINES[idx], card = $('lc' + idx);
+    if (L2done[idx]) return;
+
+    if (sKey === line.s) {
+      card.classList.add('done');
+      btn.classList.add('ok');
+      card.querySelectorAll('.opt').forEach(function (x) { x.disabled = true; });
+      // 已选中的按钮保持高亮
+      btn.disabled = false; btn.classList.add('ok');
+      L2done[idx] = true;
+      var n = Object.keys(L2done).length;
+      var sname = SERIES.filter(function (s) { return s.key === line.s; })[0].name;
+      if (n === L2_LINES.length) {
+        var gain = addScore(15);
+        setFb('✓ 五条谱线全部归位！本关 +' + gain + ' 分。下一关要在能级图上自己画跃迁了。', 'ok');
+        setTimeout(function () { goto(2); }, 1200);
+      } else {
+        setFb('✓ 对了，' + line.nm + ' nm 属于' + sname + '。还剩 ' + (L2_LINES.length - n) + ' 条。', 'ok');
+      }
+    } else {
+      S.wrongInLv++;
+      btn.classList.add('no');
+      setTimeout(function () { btn.classList.remove('no'); }, 700);
+      setFb('✗ 不对。判断依据是这条线<b>落到哪一层</b>：末态 n = ' +
+            (SERIES.filter(function (s) { return s.key === line.s; })[0].nf) + '。', 'bad');
+    }
+  }
+
+  // ================= 第 3 关：自己画跃迁 =================
+  function levelY(n, nmax, top, bottom) {
+    var off = (1 - 1 / (n * n)) / (1 - 1 / (nmax * nmax));
+    return bottom - off * (bottom - top);
+  }
+
+  function buildPairs(nmax) {
+    var arr = [];
+    for (var ni = 2; ni <= nmax; ni++) {
+      for (var nf = 1; nf < ni; nf++) arr.push([ni, nf]);
+    }
+    arr.sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; });
+    return arr;
+  }
+
+  function spectralColor(nm) {
+    var r = 0, g = 0, b = 0;
+    if (nm < 380) { r = 0.62; g = 0.50; b = 1.0; }            // 紫外
+    else if (nm < 440) { r = -(nm - 440) / 60; b = 1; }
+    else if (nm < 490) { g = (nm - 440) / 50; b = 1; }
+    else if (nm < 510) { g = 1; b = -(nm - 510) / 20; }
+    else if (nm < 580) { r = (nm - 510) / 70; g = 1; }
+    else if (nm < 645) { r = 1; g = -(nm - 645) / 65; }
+    else if (nm <= 780) { r = 1; }
+    else { r = 0.75; g = 0.18; b = 0.18; }                     // 红外
+    var f = function (x) { return Math.round(255 * Math.pow(Math.max(0, Math.min(1, x)), 0.8)); };
+    return 'rgb(' + f(r) + ',' + f(g) + ',' + f(b) + ')';
+  }
+
+  function fitCanvas(cv, cssH) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = cv.getBoundingClientRect();
+    var w = Math.max(280, rect.width || cv.clientWidth || 600);
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(cssH * dpr);
+    cv.style.height = cssH + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: cssH };
+  }
+
+  function renderL3() {
+    var btns = [3, 4, 5, 6].map(function (n) {
+      return '<button data-n="' + n + '" class="' + (n === L3.nmax ? 'on' : '') + '">n ≤ ' + n + '</button>';
+    }).join('');
+
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 3 关 · 自己画跃迁</div>' +
+        '<p class="qt">在能级图上<b>先点高能级、再点低能级</b>画出一条跃迁（手机、电脑都可以点）。' +
+        '把 n ≤ 选定上限之间<b>所有</b>可能的跃迁都画完，左下角的光谱会自动长出来。</p>' +
+        '<div class="toolbar">' +
+          '<span style="color:#93a2c7;font-size:13px">初始激发态上限</span>' +
+          '<div class="grp" id="nmaxGrp">' + btns + '</div>' +
+          '<button class="btn ghost" id="undoBtn" style="padding:8px 14px;font-size:13px">撤回</button>' +
+          '<span class="counter">已画 <b id="cnt">0</b> / <span id="tot">0</span> 条</span>' +
+        '</div>' +
+        '<canvas id="cvLevel"></canvas>' +
+        '<canvas id="cvSpec"></canvas>' +
+        '<p class="cap">上图：能级与跃迁（箭头方向 = 电子从高能级落到低能级，发出一个光子）　下图：由这些跃迁生成的光谱线（对数波长轴）</p>' +
+      '</div>';
+
+    L3.pairs = buildPairs(L3.nmax);
+    $('tot').textContent = L3.pairs.length;
+    $('cnt').textContent = Object.keys(L3.drawn).length;
+
+    $('nmaxGrp').querySelectorAll('button').forEach(function (b) {
+      b.onclick = function () {
+        L3.nmax = +b.dataset.n;
+        L3.drawn = {}; L3.sel = null;
+        renderL3();
+        setFb('已切换到 n ≤ ' + L3.nmax + '，共 ' + L3.pairs.length + ' 条跃迁要画。');
+      };
+    });
+    $('undoBtn').onclick = function () {
+      var keys = Object.keys(L3.drawn);
+      if (!keys.length) { setFb('还没有画任何跃迁。'); return; }
+      delete L3.drawn[keys[keys.length - 1]];
+      L3.sel = null;
+      drawLevel(); drawSpec();
+      $('cnt').textContent = Object.keys(L3.drawn).length;
+      setFb('已撤回最后一条。');
+    };
+
+    var cv = $('cvLevel');
+    cv.addEventListener('click', onLevelClick);
+    drawLevel();
+    drawSpec();
+    setFb('先点一个能级，再点另一个能级，就能连出一条跃迁。');
+  }
+
+  function onLevelClick(e) {
+    var cv = $('cvLevel');
+    var r = cv.getBoundingClientRect();
+    var y = e.clientY - r.top;
+    var nmax = L3.nmax;
+    var hit = null, best = 22;
+    for (var n = 1; n <= nmax; n++) {
+      var d = Math.abs(y - levelY(n, nmax, TOP, BOT));
+      if (d < best) { best = d; hit = n; }
+    }
+    if (hit === null) { setFb('没点中能级，请点到那条横线上。'); return; }
+
+    if (L3.sel === null) {
+      L3.sel = hit;
+      drawLevel();
+      setFb('已选中 n=' + hit + '，再点一个更低（更靠下）的能级。');
+      return;
+    }
+    if (L3.sel === hit) {
+      L3.sel = null; drawLevel(); setFb('已取消选择。');
+      return;
+    }
+
+    var from = L3.sel, to = hit;   // from 是第一次点的
+    L3.sel = null;
+
+    if (to > from) {                // 点反了，自动交换，更宽容
+      var t = from; from = to; to = t;
+    }
+    var key = from + '-' + to;
+
+    if (L3.drawn[key]) {
+      drawLevel();
+      setFb('✗ ' + from + ' → ' + to + ' 这条跃迁已经画过了，换一条。', 'bad');
+      return;
+    }
+    if (from === to) { drawLevel(); return; }
+
+    L3.drawn[key] = true;
+    drawLevel(); drawSpec();
+    var done = Object.keys(L3.drawn).length, total = L3.pairs.length;
+    $('cnt').textContent = done;
+
+    var nm = lambdaNm(to, from);
+    if (done === total) {
+      var gain = addScore(20);
+      setFb('✓ 全部 ' + total + ' 条跃迁都画完了！光谱里出现 ' + total + ' 条谱线。本关 +' + gain + ' 分。', 'ok');
+      setTimeout(function () { finishGame(); }, 900);
+    } else {
+      setFb('✓ 画对了 ' + from + ' → ' + to + '，波长约 ' + nm.toFixed(1) + ' nm。还剩 ' + (total - done) + ' 条。', 'ok');
+    }
+  }
+
+  var TOP = 30, BOT = 0;   // 由 drawLevel 实际计算
+
+  function drawLevel() {
+    var cv = $('cvLevel');
+    if (!cv) return;
+    var f = fitCanvas(cv, 320), ctx = f.ctx, w = f.w;
+    var nmax = L3.nmax;
+    var top = 34, bot = 268;
+    TOP = top; BOT = bot;
+
+    var x0 = 62, x1 = w - 150;
+
+    ctx.clearRect(0, 0, w, 340);
+
+    // 能级横线（位置按真实 1/n² 能量排布）
+    var labels = [];
+    for (var n = 1; n <= nmax; n++) {
+      var y = levelY(n, nmax, top, bot);
+      var isSel = (L3.sel === n);
+      ctx.beginPath();
+      ctx.strokeStyle = isSel ? '#2dd4bf' : (n === 1 ? '#f6c453' : '#5b6c9c');
+      ctx.lineWidth = isSel ? 3.5 : (n === 1 ? 2.6 : 2);
+      if (isSel) { ctx.shadowColor = '#2dd4bf'; ctx.shadowBlur = 12; }
+      ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      ctx.shadowBlur = 0;
+      labels.push({ n: n, y: y, ty: y });
+    }
+
+    // n 越大能级越密，n=5 与 n=6 只差几个像素：把标签往下推开并画引线
+    labels.sort(function (a, b) { return a.ty - b.ty; });
+    for (var k2 = 1; k2 < labels.length; k2++) {
+      if (labels[k2].ty - labels[k2 - 1].ty < 26) {
+        labels[k2].ty = labels[k2 - 1].ty + 26;
+      }
+    }
+    labels.forEach(function (o) {
+      if (Math.abs(o.ty - o.y) > 1) {
+        ctx.strokeStyle = '#3a4a72'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x1, o.y); ctx.lineTo(x1 + 7, o.ty); ctx.stroke();
+      }
+      ctx.fillStyle = L3.sel === o.n ? '#a7f3d0' : '#cfd9f0';
+      ctx.font = '600 13px Consolas, monospace';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('n=' + o.n, x1 + 10, o.ty - 7);
+      ctx.fillStyle = '#7c8cb8';
+      ctx.font = '12px Consolas, monospace';
+      ctx.fillText(E(o.n).toFixed(2) + ' eV', x1 + 10, o.ty + 9);
+    });
+
+    // 已画跃迁
+    var total = L3.pairs.length;
+    var slotW = (x1 - x0 - 24) / Math.max(1, total - 1);
+    L3.pairs.forEach(function (p, i) {
+      var key = p[0] + '-' + p[1];
+      if (!L3.drawn[key]) return;
+      var x = x0 + 12 + i * slotW;
+      var yHi = levelY(p[0], nmax, top, bot);
+      var yLo = levelY(p[1], nmax, top, bot);
+      var col = spectralColor(lambdaNm(p[1], p[0]));
+      ctx.strokeStyle = col; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, yHi); ctx.lineTo(x, yLo - 2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, yLo); ctx.lineTo(x - 5, yLo - 9); ctx.lineTo(x + 5, yLo - 9);
+      ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+    });
+
+    ctx.fillStyle = '#6b7ba4';
+    ctx.font = '12px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('能量 ↑（n 越大，能级越靠上、间距越密）', 12, 8);
+  }
+
+  function drawSpec() {
+    var cv = $('cvSpec');
+    if (!cv) return;
+    var f = fitCanvas(cv, 110), ctx = f.ctx, w = f.w;
+    ctx.clearRect(0, 0, w, 120);
+
+    var LMIN = 90, LMAX = 9000;
+    var padL = 46, padR = 18;
+    var lg = function (v) { return Math.log10(v); };
+    var xOf = function (nm) {
+      return padL + (lg(nm) - lg(LMIN)) / (lg(LMAX) - lg(LMIN)) * (w - padL - padR);
+    };
+
+    // 轴
+    ctx.strokeStyle = '#2a3556'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, 84); ctx.lineTo(w - padR, 84); ctx.stroke();
+
+    // 刻度
+    ctx.fillStyle = '#6b7ba4'; ctx.font = '10.5px Consolas, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    [100, 200, 500, 1000, 2000, 5000, 8000].forEach(function (t) {
+      var x = xOf(t);
+      ctx.beginPath(); ctx.strokeStyle = '#1d2643';
+      ctx.moveTo(x, 84); ctx.lineTo(x, 90); ctx.stroke();
+      ctx.fillText(t + '', x, 93);
+    });
+
+    // 可见光带
+    var gx0 = xOf(380), gx1 = xOf(780);
+    var grad = ctx.createLinearGradient(gx0, 0, gx1, 0);
+    grad.addColorStop(0, 'rgba(130,90,255,.28)');
+    grad.addColorStop(0.25, 'rgba(40,120,255,.28)');
+    grad.addColorStop(0.5, 'rgba(40,220,140,.26)');
+    grad.addColorStop(0.75, 'rgba(255,230,60,.26)');
+    grad.addColorStop(1, 'rgba(255,60,60,.26)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(gx0, 40, gx1 - gx0, 44);
+
+    // 谱线
+    var keys = Object.keys(L3.drawn);
+    keys.forEach(function (k) {
+      var p = k.split('-').map(Number);
+      var nm = lambdaNm(p[1], p[0]);
+      var x = xOf(Math.max(LMIN, Math.min(LMAX, nm)));
+      var col = spectralColor(nm);
+      ctx.strokeStyle = col; ctx.lineWidth = 2.4;
+      ctx.shadowColor = col; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.moveTo(x, 44); ctx.lineTo(x, 84); ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+
+    // 标注 121.6 / 656.3
+    if (L3.drawn['2-1']) {
+      var x1 = xOf(121.6);
+      ctx.fillStyle = '#a7f3d0'; ctx.font = '10.5px Consolas, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText('121.6', x1, 40);
+    }
+    if (L3.drawn['3-2']) {
+      var x2 = xOf(656.3);
+      ctx.fillStyle = '#fecaca'; ctx.font = '10.5px Consolas, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText('656.3 (Hα)', x2, 40);
+    }
+
+    ctx.fillStyle = '#6b7ba4'; ctx.font = '10.5px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('波长轴 (nm, 对数) →', 6, 8);
+  }
+
+  window.addEventListener('resize', function () {
+    if (S.lv === 2) { drawLevel(); drawSpec(); }
+  });
+
+  // ================= 结算 =================
+  function finishGame() {
+    var groups = {};
+    L3.pairs.forEach(function (p) {
+      if (!L3.drawn[p[0] + '-' + p[1]]) return;
+      var s = SERIES.filter(function (x) { return x.nf === p[1]; })[0];
+      (groups[s.name] = groups[s.name] || []).push(p[0] + '→' + p[1] + '：' + lambdaNm(p[1], p[0]).toFixed(1) + ' nm');
+    });
+    var html = '';
+    Object.keys(groups).forEach(function (name) {
+      html += '<div class="repline"><b>' + name + '</b>　' + groups[name].join('　|　') + '</div>';
+    });
+
+    var secs = Math.floor((Date.now() - S.t0) / 1000);
+    showModal(
+      '<h2>🏆 通关！光谱分析报告完成</h2>' +
+      '<div class="body">' +
+        '<div class="big">' + S.score + ' 分</div>用时 ' + pad2(Math.floor(secs / 60)) + ':' + pad2(secs % 60) + '。' +
+        '<p>你画的跃迁按末态 n 分组，正好对应五个线系：</p>' +
+        '<div class="rep">' + html + '</div>' +
+        '<p style="margin-top:14px;color:#93a2c7">' +
+          '注意规律：同一线系的所有谱线，<b>短波极限</b>就是 n→∞ 落向该层的那条（如巴尔末系极限 364.6 nm）。' +
+          '这也是里德伯公式能用一个 R 把所有线系统一起来的原因。' +
+        '</p>' +
+      '</div>',
+      [
+        { label: '再来一次', fn: function () { closeModal(); location.reload(); } },
+        { label: '回到合集', ghost: true, fn: function () { location.href = 'index.html'; } }
+      ]
+    );
+  }
+
+  // ================= 开场 =================
+  function intro() {
+    showModal(
+      '<h2>🔬 情景：一份没写完的光谱分析报告</h2>' +
+      '<div class="body">' +
+        '<p>光谱分析小组正在整理氢原子的谱线数据，报告写到一半卡住了：能量、波长、线系归属，还差最后一张跃迁图。</p>' +
+        '<p style="margin-bottom:6px">三关任务：</p>' +
+        '<ul>' +
+          '<li><b>第 1 关</b>　用 E = −13.6/n² 和里德伯公式算出能量与波长</li>' +
+          '<li><b>第 2 关</b>　把 5 条真实谱线归入对应线系</li>' +
+          '<li><b>第 3 关</b>　在能级图上画出所有跃迁，自己"生成"光谱</li>' +
+        '</ul>' +
+        '<p style="margin-top:12px;color:#93a2c7">答错不扣光分，可以一直重试；手机、平板都能玩。</p>' +
+      '</div>',
+      [{ label: '开始闯关', fn: function () { closeModal(); goto(0); } }]
+    );
+  }
+
+  setHud();
+  intro();
+})();
+</script>
+</body>
+</html>

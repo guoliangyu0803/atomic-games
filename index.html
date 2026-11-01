@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>原子物理闯关 · 合集</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0b1020;--card:#151d36;--card2:#1b2542;--line:#2a3556;
+    --txt:#e9eefc;--muted:#93a2c7;--teal:#2dd4bf;--gold:#f6c453;--blue:#60a5fa;
+  }
+  html,body{margin:0;min-height:100%}
+  body{
+    background:radial-gradient(1100px 560px at 50% -12%,#1e2c52,#0b1020 62%);
+    color:var(--txt);
+    font-family:'Segoe UI','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 18px 56px}
+  header{text-align:center;margin-bottom:34px}
+  .kicker{color:var(--teal);letter-spacing:.22em;font-size:12px;text-transform:uppercase}
+  h1{font-size:clamp(24px,4.6vw,38px);margin:10px 0 12px;letter-spacing:.01em}
+  .sub{color:var(--muted);font-size:15px;line-height:1.8;max-width:620px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:18px;margin-top:34px}
+  .card{
+    background:linear-gradient(180deg,var(--card),#121a30);
+    border:1px solid var(--line);border-radius:18px;padding:22px;
+    text-decoration:none;color:inherit;display:flex;flex-direction:column;
+    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+    position:relative;overflow:hidden;
+  }
+  .card::after{
+    content:'';position:absolute;inset:0;border-radius:18px;pointer-events:none;
+    background:radial-gradient(320px 140px at 100% 0%,rgba(45,212,191,.10),transparent 70%);
+  }
+  .card:hover{transform:translateY(-4px);border-color:#3c5185;box-shadow:0 14px 34px rgba(0,0,0,.38)}
+  .card .ico{font-size:30px;line-height:1}
+  .card h2{font-size:19px;margin:14px 0 6px}
+  .card p{color:var(--muted);font-size:13.5px;line-height:1.75;margin:0 0 16px;flex:1}
+  .tags{display:flex;gap:7px;flex-wrap:wrap}
+  .tag{font-size:11.5px;color:#a9b8dd;border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .go{margin-top:16px;color:var(--teal);font-size:13.5px;font-weight:600}
+  .qrbar{
+    margin-top:30px;display:flex;align-items:center;justify-content:center;gap:14px;
+    flex-wrap:wrap;background:var(--card);border:1px dashed #35446d;border-radius:14px;padding:16px;
+  }
+  .qrbar span{color:var(--muted);font-size:13.5px}
+  .btn{
+    appearance:none;border:1px solid transparent;border-radius:12px;padding:11px 20px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+    background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04211d;text-decoration:none;display:inline-block;
+  }
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--txt)}
+  footer{margin-top:38px;text-align:center;color:#6b7ba4;font-size:12.5px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Offline · Atomic Physics</div>
+    <h1>⚛️ 原子物理闯关合集</h1>
+    <p class="sub">三个可在浏览器直接运行的原子物理小游戏：算能级、认线系、画跃迁。全部离线可用，手机、平板、电脑都能玩。</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="hydrogen.html">
+      <div class="ico">🔬</div>
+      <h2>氢原子光谱</h2>
+      <p>从里德伯公式出发，先算出波长，再把谱线归入莱曼、巴尔末等线系，最后自己在能级图上画出所有跃迁并生成光谱。</p>
+      <div class="tags"><span class="tag">里德伯公式</span><span class="tag">5 个线系</span><span class="tag">画跃迁</span></div>
+      <div class="go">开始闯关 →</div>
+    </a>
+
+    <a class="card" href="sodium.html">
+      <div class="ico">🧪</div>
+      <h2>钠原子光谱</h2>
+      <p>为什么钠是黄色的？从电子组态、能级排序、选择定则一路推到主线系，最后算出 589 nm 的 D 线。</p>
+      <div class="tags"><span class="tag">量子数亏损</span><span class="tag">四大线系</span><span class="tag">D 线</span></div>
+      <div class="go">开始闯关 →</div>
+    </a>
+
+    <a class="card" href="zeeman.html">
+      <div class="ico">🧲</div>
+      <h2>塞曼效应</h2>
+      <p>一条 ³P₂ → ³S₁ 的谱线放进磁场后裂成 9 条。自己算朗德 g 因子、列 m_J、连允许跃迁，把分裂图画完整。</p>
+      <div class="tags"><span class="tag">朗德 g</span><span class="tag">Δm=0,±1</span><span class="tag">σ± / π</span></div>
+      <div class="go">开始闯关 →</div>
+    </a>
+  </div>
+
+  <div class="qrbar" id="qrbar" style="display:none">
+    <span>课堂模式：把下面这个页面投到大屏，学生扫码就能在手机上打开本合集。</span>
+    <a class="btn" href="qr.html">📱 显示课堂二维码</a>
+  </div>
+
+  <footer>
+    纯静态页面 · 无需联网 · 无需安装<br>
+    老师可以用「启动课堂服务器.bat」开一个局域网地址，学生连同一个 WiFi 扫码进入
+  </footer>
+</div>
+
+<script>
+  // 只有在通过 http 打开时（局域网服务器）才显示二维码入口：
+  // 直接双击 file:// 打开时，学生手机无法访问本机文件，扫码也就没有意义。
+  if (location.protocol === 'http:' || location.protocol === 'https:') {
+    document.getElementById('qrbar').style.display = 'flex';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>钠原子光谱 · 能级闯关</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0b1020;--card:#151d36;--card2:#1b2542;--line:#2a3556;
+    --txt:#e9eefc;--muted:#93a2c7;--teal:#2dd4bf;--gold:#f6c453;
+    --red:#fb7185;--green:#34d399;--blue:#60a5fa;
+  }
+  html,body{margin:0;min-height:100%}
+  body{
+    background:radial-gradient(1100px 560px at 50% -12%,#1e2c52,#0b1020 62%);
+    color:var(--txt);font-family:'Segoe UI','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+  .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .back{color:var(--muted);text-decoration:none;font-size:13.5px;border:1px solid var(--line);padding:6px 11px;border-radius:10px}
+  .back:hover{color:var(--txt);border-color:#3c5185}
+  h1{font-size:19px;margin:0;flex:1;min-width:140px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--muted)}
+  .chip b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  .steps{display:flex;gap:8px;margin-bottom:14px}
+  .step{height:6px;flex:1;border-radius:99px;background:#1d2643;transition:background .3s}
+  .step.done{background:linear-gradient(90deg,#2dd4bf,#60a5fa)}
+  .step.cur{background:linear-gradient(90deg,#f6c453,#f59e0b)}
+
+  .panel{background:linear-gradient(180deg,var(--card),#121a30);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .qh{font-size:12px;letter-spacing:.16em;color:var(--teal);text-transform:uppercase;margin-bottom:8px}
+  .qt{font-size:15px;line-height:1.85;color:var(--txt);margin:0}
+  .qt code{font-family:Consolas,'Courier New',monospace;background:#0d1428;border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;font-size:13.5px;color:#a5f3ea}
+
+  .choices{display:grid;gap:10px;margin-top:16px}
+  .choice{
+    text-align:left;appearance:none;border:1px solid var(--line);background:#101830;color:#cfd9f0;
+    border-radius:12px;padding:14px 16px;font-size:14.5px;cursor:pointer;font-family:Consolas,monospace;
+    transition:.15s;letter-spacing:.02em;
+  }
+  .choice:hover:not(:disabled){border-color:#3c5185;background:#152040;color:#fff}
+  .choice.ok{border-color:#2f9e83;background:#0f3b30;color:#a7f3d0}
+  .choice.no{border-color:#7f2d3d;background:#3a1420;color:#fecdd3}
+  .choice:disabled{cursor:default}
+
+  /* 排序关 */
+  .pool{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+  .token{
+    appearance:none;border:1px solid #3c5185;background:#152040;color:#e9eefc;border-radius:11px;
+    padding:11px 18px;font-size:15px;font-weight:700;cursor:pointer;font-family:Consolas,monospace;
+    transition:.15s;
+  }
+  .token:hover{background:#1c2a52;border-color:#5a72b8}
+  .token:disabled{opacity:0;pointer-events:none}
+  .slots{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+  .slot{
+    display:flex;align-items:center;gap:10px;background:#0d1428;border:1px dashed #2f3d63;
+    border-radius:11px;padding:9px 12px;min-height:44px;
+  }
+  .slot .idx{color:#5d6d99;font-size:12.5px;width:56px;flex:none;font-family:Consolas,monospace}
+  .slot .val{font-family:Consolas,monospace;font-size:15px;font-weight:700;color:var(--teal)}
+  .slot.filled{border-style:solid;border-color:#2a3556}
+  .slot.filled .idx{color:#93a2c7}
+  .slot.ok{border-color:#2f9e83;background:#0c2a25}
+  .slot.ok .val{color:#a7f3d0}
+  .slot.no{border-color:#7f2d3d;background:#2a1018}
+  .slot.no .val{color:#fecdd3}
+  .slot .num{color:#93a2c7;font-size:12px;margin-left:auto;font-family:Consolas,monospace}
+
+  /* 匹配关 */
+  .match{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+  .mrow{background:#101830;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .mrow .desc{font-family:Consolas,monospace;font-size:14px;color:var(--gold);margin-bottom:9px}
+  .mrow .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{
+    appearance:none;border:1px solid var(--line);background:#0d1428;color:#cfd9f0;
+    border-radius:9px;padding:7px 11px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .opt:hover:not(:disabled){border-color:#3c5185;color:#fff}
+  .opt:disabled{cursor:default;opacity:.4}
+  .mrow.done .opt{opacity:.35}
+  .opt.ok{background:#0f3b30;border-color:#2f9e83;color:#a7f3d0;opacity:1 !important}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 4px}
+  .counter{margin-left:auto;color:var(--muted);font-size:13.5px}
+  .counter b{color:var(--teal)}
+
+  canvas{display:block;width:100%;border-radius:12px;background:#0a1122;border:1px solid var(--line)}
+  #cvLevel{cursor:pointer;touch-action:manipulation}
+  #cvSpec{margin-top:10px}
+  .cap{color:#6b7ba4;font-size:12.5px;margin:8px 2px 0}
+
+  .fb{margin-top:14px;border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.75;
+    border:1px solid var(--line);background:#0f1730;color:var(--muted);min-height:22px}
+  .fb.ok{border-color:#1f6f5c;background:#0c2a25;color:#a7f3d0}
+  .fb.bad{border-color:#7f2d3d;background:#2a1018;color:#fecdd3}
+
+  .btn{
+    appearance:none;border:1px solid transparent;border-radius:12px;padding:11px 20px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+    background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04211d;transition:.15s;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.08)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--txt)}
+  .btn.ghost:hover{border-color:#3c5185}
+
+  .modal{position:fixed;inset:0;background:rgba(6,10,20,.74);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .modal.show{display:flex}
+  .modal .box{background:var(--card2);border:1px solid var(--line);border-radius:18px;
+    max-width:600px;width:100%;padding:24px;max-height:86vh;overflow:auto}
+  .modal h2{margin:0 0 12px;font-size:19px}
+  .modal .body{color:#cfd9f0;font-size:14px;line-height:1.9}
+  .modal .body ul{margin:8px 0 0;padding-left:20px}
+  .modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  .big{font-size:26px;font-weight:800;color:var(--teal);margin:6px 0 2px}
+  .kv{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+  .kvr{background:#101830;border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+    font-size:13px;font-family:Consolas,monospace;color:#cfd9f0;display:flex;justify-content:space-between;gap:10px}
+  .kvr b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 合集</a>
+    <h1>🧪 钠原子光谱 · 能级闯关</h1>
+    <div class="hud">
+      <span class="chip">第 <b id="hudLv">1</b> / 4 关</span>
+      <span class="chip">用时 <b id="hudTime">00:00</b></span>
+      <span class="chip">得分 <b id="hudScore">0</b></span>
+    </div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step cur"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+  </div>
+
+  <div id="stage"></div>
+  <div class="fb" id="fb">钠比氢复杂一点：内层电子把核挡住了，能级不再只由 n 决定。</div>
+</div>
+
+<div class="modal" id="modal"><div class="modalBox" id="modalBox"></div></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 钠原子真实项值（单位 cm⁻¹，以 3S 为 0；电离限 41449.5） ----------
+  var IP = 41449.5;
+  var LEVELS = [
+    // dy：3D 与 4P 真实只差约 1100 cm⁻¹，画面上会重叠，为可点/可读略微分开画
+    { k: '3S', n: 3, l: 's', T: 0,      dy:  0 },
+    { k: '3P', n: 3, l: 'p', T: 16973,  dy:  0 },
+    { k: '4S', n: 4, l: 's', T: 25740,  dy: -3 },
+    { k: '3D', n: 3, l: 'd', T: 29173,  dy: -7 },
+    { k: '4P', n: 4, l: 'p', T: 30273,  dy:  7 },
+    { k: '5S', n: 5, l: 's', T: 33201,  dy:  3 },
+    { k: '5P', n: 5, l: 'p', T: 35041,  dy:  0 }
+  ];
+  var byKey = {};
+  LEVELS.forEach(function (L) { byKey[L.k] = L; });
+
+  var waveNm = function (hiKey, loKey) {
+    var dT = byKey[hiKey].T - byKey[loKey].T;
+    return dT > 0 ? 1e7 / dT : NaN;
+  };
+
+  var S = { lv: 0, score: 0, wrongInLv: 0, t0: Date.now(), timer: null };
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $('stage'), fb = $('fb'), modal = $('modal'), modalBox = $('modalBox');
+
+  // ---------- 通用 ----------
+  function setFb(msg, kind) {
+    fb.innerHTML = msg;
+    fb.className = 'fb' + (kind ? ' ' + kind : '');
+  }
+  function setHud() {
+    $('hudLv').textContent = Math.min(S.lv + 1, 4);
+    $('hudScore').textContent = S.score;
+    var steps = $('steps').children;
+    for (var i = 0; i < steps.length; i++) {
+      steps[i].className = 'step' + (i < S.lv ? ' done' : (i === S.lv ? ' cur' : ''));
+    }
+  }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var s = Math.floor((Date.now() - S.t0) / 1000);
+    $('hudTime').textContent = pad2(Math.floor(s / 60)) + ':' + pad2(s % 60);
+  }
+  S.timer = setInterval(tick, 500); tick();
+
+  function showModal(html, actions) {
+    modalBox.innerHTML = html + '<div class="acts" id="mActs"></div>';
+    var acts = $('mActs');
+    (actions || []).forEach(function (a) {
+      var b = document.createElement('button');
+      b.className = 'btn' + (a.ghost ? ' ghost' : '');
+      b.textContent = a.label;
+      b.onclick = function () { if (a.fn) a.fn(); };
+      acts.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
+  function closeModal() { modal.classList.remove('show'); }
+
+  function addScore(full) {
+    var gain = Math.max(2, full - 2 * S.wrongInLv);
+    S.score += gain; setHud(); return gain;
+  }
+
+  function goto(lv) {
+    S.lv = lv; S.wrongInLv = 0; setHud();
+    if (lv === 0) renderL1();
+    else if (lv === 1) renderL2();
+    else if (lv === 2) renderL3();
+    else renderL4();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ============ 第 1 关：电子组态 ============
+  function renderL1() {
+    var opts = [
+      '1s² 2s² 2p⁶ 3s¹',
+      '1s² 2s² 2p⁶ 3s² 3p¹',
+      '1s² 2s² 2p⁵ 3s²',
+      '1s² 2s² 2p⁶ 3p¹'
+    ];
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 1 关 · 谁在发光</div>' +
+        '<p class="qt">钠（Z = 11）的基态电子组态是哪一个？' +
+        '想一想：真正参与光学跃迁的，是哪些电子？</p>' +
+        '<div class="choices" id="choices">' +
+          opts.map(function (o, i) { return '<button class="choice" data-i="' + i + '">' + o + '</button>'; }).join('') +
+        '</div>' +
+      '</div>';
+
+    stage.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i;
+        if (i === 0) {
+          b.classList.add('ok');
+          stage.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+          var gain = addScore(5);
+          setFb('✓ 正确：1s² 2s² 2p⁶ 3s¹。最外层只有一个 3s 电子，内层 10 个电子形成闭壳层——' +
+                '正是这个"单价电子"让钠的光谱既有氢的规矩，又不完全一样。+' + gain + ' 分。', 'ok');
+          setTimeout(function () { goto(1); }, 1400);
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 800);
+          setFb('✗ 不对。钠的 Z=11，基态时 3s 上只有一个电子（3s¹），内层 2+2+6=10 个电子已经填满。', 'bad');
+        }
+      };
+    });
+    setFb('提示：3s 轨道最多能放 2 个电子，但钠只填了 1 个。');
+  }
+
+  // ============ 第 2 关：能级排序 ============
+  var ORDER = ['3S', '3P', '4S', '3D', '4P', '5S'];
+  var POOL = ['4P', '3S', '5S', '3P', '3D', '4S'];
+  var L2 = { placed: [], pool: [] };
+
+  function renderL2() {
+    L2.placed = [];
+    L2.pool = POOL.slice();
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 2 关 · 能级谁高谁低</div>' +
+        '<p class="qt">因为量子数亏损，钠的能级只由 n 决定的老规矩失效了：不同 l 的轨道被内层电子穿透得不一样。' +
+        '按能量<b>从低到高</b>把下面 6 个能级项排进序列（点一下放进下一格，点已放入的项可以取回）。</p>' +
+        '<div class="pool" id="pool"></div>' +
+        '<div class="slots" id="slots"></div>' +
+        '<div class="toolbar"><button class="btn ghost" id="clearBtn">全部取回</button></div>' +
+      '</div>';
+
+    drawPool(); drawSlots();
+    $('clearBtn').onclick = function () {
+      L2.pool = L2.pool.concat(L2.placed);
+      L2.placed = [];
+      drawPool(); drawSlots();
+      setFb('已清空，重新排。');
+    };
+    setFb('想一想：s 电子最容易钻到核附近，被核吸引得最紧，所以能级最低。');
+  }
+
+  function drawPool() {
+    var pool = $('pool');
+    pool.innerHTML = L2.pool.map(function (k, i) {
+      return '<button class="token" data-k="' + k + '">' + k + '</button>';
+    }).join('');
+    pool.querySelectorAll('.token').forEach(function (b) {
+      b.onclick = function () {
+        if (L2.placed.length >= 6) return;
+        var k = b.dataset.k;
+        L2.pool.splice(L2.pool.indexOf(k), 1);
+        L2.placed.push(k);
+        drawPool(); drawSlots();
+        checkL2();
+      };
+    });
+  }
+
+  function drawSlots() {
+    var slots = $('slots');
+    var html = '';
+    for (var i = 0; i < 6; i++) {
+      var k = L2.placed[i];
+      // 不显示项值：否则直接按数字排序，这一关就没有意义了
+      html += '<div class="slot' + (k ? ' filled' : '') + '" data-i="' + i + '">' +
+        '<span class="idx">第 ' + (i + 1) + ' 低</span>' +
+        '<span class="val">' + (k || '—') + '</span>' +
+      '</div>';
+    }
+    slots.innerHTML = html;
+    // 用绝对下标取回，避免只按"已填格子"筛选后索引错位
+    slots.querySelectorAll('.slot').forEach(function (el) {
+      var i = +el.dataset.i;
+      if (!L2.placed[i]) return;
+      el.style.cursor = 'pointer';
+      el.onclick = function () {
+        var k = L2.placed[i];
+        L2.placed.splice(i, 1);
+        L2.pool.push(k);
+        drawPool(); drawSlots();
+      };
+    });
+  }
+
+  function checkL2() {
+    if (L2.placed.length < 6) return;
+    var ok = L2.placed.every(function (k, i) { return k === ORDER[i]; });
+    if (!ok) {
+      S.wrongInLv++;
+      setFb('✗ 顺序还不对。提示：3S < 3P，然后是 4S，再往后 3D 和 4P 挨得很近，最后是 5S。' +
+            '（点已放入的项可以取回重排）', 'bad');
+      return;
+    }
+    var gain = addScore(10);
+    setFb('✓ 排序正确：3S(0) &lt; 3P(16973) &lt; 4S(25740) &lt; 3D(29173) &lt; 4P(30273) &lt; 5S(33201) cm⁻¹。' +
+          '注意 4S 比 3D 还低——这就是"穿透"造成的，钠的光谱因此比氢复杂。+' + gain + ' 分。', 'ok');
+    setTimeout(function () { goto(2); }, 1800);
+  }
+
+  // ============ 第 3 关：四大线系 ============
+  var SERIES = [
+    { key: 'main',      name: '主线系',     desc: 'nP → 3S   (n = 3, 4, 5 …)' },
+    { key: 'sharp',     name: '第二辅线系', desc: 'nS → 3P   (n = 4, 5 …)' },
+    { key: 'diffuse',   name: '第一辅线系', desc: 'nD → 3P   (n = 3, 4 …)' },
+    { key: 'fundamental', name: '柏格曼系', desc: 'nF → 3D   (n = 4, 5 …)' }
+  ];
+  var L3done = {};
+
+  function renderL3() {
+    L3done = {};
+    var rows = SERIES.map(function (s, i) {
+      var opts = SERIES.map(function (x) {
+        return '<button class="opt" data-i="' + i + '" data-k="' + x.key + '">' + x.name + '</button>';
+      }).join('');
+      return '<div class="mrow" id="mr' + i + '">' +
+        '<div class="desc">' + s.desc + '</div>' +
+        '<div class="opts">' + opts + '</div>' +
+      '</div>';
+    }).join('');
+
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 3 关 · 四大线系</div>' +
+        '<p class="qt">碱金属的四组谱线，其实只是"电子从不同 l 的轨道落回 3S 或 3P"的不同说法。' +
+        '给每个跃迁类型选出它对应的线系名。</p>' +
+        '<div class="match">' + rows + '</div>' +
+      '</div>';
+
+    stage.querySelectorAll('.opt').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i, k = b.dataset.k;
+        if (L3done[i]) return;
+        if (k === SERIES[i].key) {
+          b.classList.add('ok');
+          $('mr' + i).classList.add('done');
+          $('mr' + i).querySelectorAll('.opt').forEach(function (x) { x.disabled = true; });
+          b.disabled = false;
+          L3done[i] = true;
+          var n = Object.keys(L3done).length;
+          if (n === SERIES.length) {
+            var gain = addScore(12);
+            setFb('✓ 四个线系全部对上！主线系落到 3S，其余三个都落到 3P 或 3D。+' + gain + ' 分。', 'ok');
+            setTimeout(function () { goto(3); }, 1300);
+          } else {
+            setFb('✓ 对了一个，还剩 ' + (SERIES.length - n) + ' 个。', 'ok');
+          }
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 700);
+          setFb('✗ 不对。看末态：这条线最后落到哪一层，就属于以那层为"终点"的线系。', 'bad');
+        }
+      };
+    });
+    setFb('口诀：主线系落 3S，其余落 3P，柏格曼落 3D。');
+  }
+
+  // ============ 第 4 关：画主线系，算出黄光 ============
+  var L4 = { drawn: {}, sel: null };
+  var REQUIRED = ['3P|3S', '4P|3S', '5P|3S'];
+
+  function yOf(T, top, bot) {
+    return bot - (T / IP) * (bot - top);
+  }
+
+  function fitCanvas(cv, cssH) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = cv.getBoundingClientRect();
+    var w = Math.max(280, rect.width || cv.clientWidth || 600);
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(cssH * dpr);
+    cv.style.height = cssH + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: cssH };
+  }
+
+  function spectralColor(nm) {
+    var r = 0, g = 0, b = 0;
+    if (nm < 380) { r = 0.62; g = 0.50; b = 1.0; }
+    else if (nm < 440) { r = -(nm - 440) / 60; b = 1; }
+    else if (nm < 490) { g = (nm - 440) / 50; b = 1; }
+    else if (nm < 510) { g = 1; b = -(nm - 510) / 20; }
+    else if (nm < 580) { r = (nm - 510) / 70; g = 1; }
+    else if (nm < 645) { r = 1; g = -(nm - 645) / 65; }
+    else if (nm <= 780) { r = 1; }
+    else { r = 0.75; g = 0.18; b = 0.18; }
+    var f = function (x) { return Math.round(255 * Math.pow(Math.max(0, Math.min(1, x)), 0.8)); };
+    return 'rgb(' + f(r) + ',' + f(g) + ',' + f(b) + ')';
+  }
+
+  function renderL4() {
+    L4.drawn = {}; L4.sel = null;
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 4 关 · 算出钠的黄光</div>' +
+        '<p class="qt">在能级图上画出<b>主线系</b>的三条跃迁：nP → 3S（n = 3, 4, 5）。' +
+        '选择定则要求 <code>Δl = ±1</code>，所以只能 S↔P。点一个能级再点另一个即可连线。</p>' +
+        '<div class="toolbar">' +
+          '<button class="btn ghost" id="undoBtn" style="padding:8px 14px;font-size:13px">撤回</button>' +
+          '<span class="counter">已画 <b id="cnt">0</b> / 3 条</span>' +
+        '</div>' +
+        '<canvas id="cvLevel"></canvas>' +
+        '<canvas id="cvSpec"></canvas>' +
+        '<p class="cap">纵轴按真实项值（cm⁻¹）排布；下图是按波长画出的谱线。' +
+          '（3D 与 4P 实际只差约 1100 cm⁻¹，为看清略微分开画）</p>' +
+      '</div>';
+
+    $('undoBtn').onclick = function () {
+      var ks = Object.keys(L4.drawn);
+      if (!ks.length) { setFb('还没有画。'); return; }
+      delete L4.drawn[ks[ks.length - 1]];
+      L4.sel = null; drawLevel(); drawSpec(); updateCnt();
+      setFb('已撤回。');
+    };
+    $('cvLevel').addEventListener('click', onLevelClick);
+    drawLevel(); drawSpec(); updateCnt();
+    setFb('提示：3S 在最底下，是最低的能级；P 有 3P、4P、5P 三个。');
+  }
+
+  function updateCnt() { $('cnt').textContent = Object.keys(L4.drawn).length; }
+
+  function onLevelClick(e) {
+    var cv = $('cvLevel');
+    var r = cv.getBoundingClientRect();
+    var y = e.clientY - r.top;
+    var top = 34, bot = 300;
+    var hit = null, best = 20;
+    LEVELS.forEach(function (L) {
+      var d = Math.abs(y - (yOf(L.T, top, bot) + L.dy));
+      if (d < best) { best = d; hit = L.k; }
+    });
+    if (!hit) { setFb('没点中能级线，请点到横线上。'); return; }
+
+    if (L4.sel === null) {
+      L4.sel = hit; drawLevel();
+      setFb('已选中 ' + hit + '，再点另一个能级。');
+      return;
+    }
+    if (L4.sel === hit) { L4.sel = null; drawLevel(); setFb('已取消。'); return; }
+
+    var a = L4.sel, b = hit;
+    L4.sel = null;
+    // 统一成"高能级 → 低能级"
+    if (byKey[a].T < byKey[b].T) { var t = a; a = b; b = t; }
+
+    if (!isAllowed(a, b)) {
+      drawLevel();
+      setFb('✗ ' + a + ' → ' + b + ' 不符合选择定则：Δl 必须等于 ±1，只能 S↔P、P↔D 这样连。', 'bad');
+      return;
+    }
+
+    var key = a + '|' + b;
+    if (L4.drawn[key]) { drawLevel(); setFb('这条已经画过了。'); return; }
+
+    if (REQUIRED.indexOf(key) < 0) {
+      drawLevel();
+      setFb('这是允许的跃迁（' + a + ' → ' + b + '），但不属于主线系。主线系的终点必须是 3S。', 'bad');
+      return;
+    }
+
+    L4.drawn[key] = true;
+    drawLevel(); drawSpec(); updateCnt();
+    var nm = waveNm(a, b);
+
+    if (Object.keys(L4.drawn).length === REQUIRED.length) {
+      var gain = addScore(20);
+      setFb('✓ 主线系三条画完！最短的是 3P → 3S，波长 ' + waveNm('3P', '3S').toFixed(1) +
+            ' nm —— 这就是钠灯那条著名的黄光。+' + gain + ' 分。', 'ok');
+      setTimeout(finishGame, 900);
+    } else {
+      setFb('✓ ' + a + ' → ' + b + ' 正确，波长 λ = 1/ΔT ≈ ' + nm.toFixed(1) + ' nm。继续。', 'ok');
+    }
+  }
+
+  function isAllowed(a, b) {
+    var la = byKey[a].l, lb = byKey[b].l;
+    var order = { s: 0, p: 1, d: 2, f: 3 };
+    return Math.abs(order[la] - order[lb]) === 1;
+  }
+
+  function drawLevel() {
+    var cv = $('cvLevel'); if (!cv) return;
+    var f = fitCanvas(cv, 350), ctx = f.ctx, w = f.w;
+    var top = 34, bot = 300;
+    var x0 = 96, x1 = w - 120;
+
+    ctx.clearRect(0, 0, w, 360);
+
+    // 电离限
+    var yIP = yOf(IP, top, bot);
+    ctx.strokeStyle = '#4b3a6b'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(x0, yIP); ctx.lineTo(x1, yIP); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#8b7bb8'; ctx.font = '11px Consolas, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('电离限 41449.5 cm⁻¹', x0 + 4, yIP - 4);
+
+    LEVELS.forEach(function (L) {
+      var y = yOf(L.T, top, bot) + L.dy;
+      var sel = L4.sel === L.k;
+      ctx.beginPath();
+      ctx.strokeStyle = sel ? '#2dd4bf' : (L.k === '3S' ? '#f6c453' : '#5b6c9c');
+      ctx.lineWidth = sel ? 3.5 : (L.k === '3S' ? 2.6 : 2);
+      if (sel) { ctx.shadowColor = '#2dd4bf'; ctx.shadowBlur = 12; }
+      ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = sel ? '#a7f3d0' : '#cfd9f0';
+      ctx.font = '700 13px Consolas, monospace';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(L.k, x0 - 10, y);
+      ctx.fillStyle = '#7c8cb8';
+      ctx.font = '11px Consolas, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(String(L.T), x1 + 10, y);
+    });
+
+    // 跃迁箭头
+    Object.keys(L4.drawn).forEach(function (key) {
+      var parts = key.split('|');
+      var hi = parts[0], lo = parts[1];
+      var y1 = yOf(byKey[hi].T, top, bot) + byKey[hi].dy;
+      var y2 = yOf(byKey[lo].T, top, bot) + byKey[lo].dy;
+      var x = x0 + (x1 - x0) * (0.30 + 0.22 * (byKey[hi].n - 3));
+      var nm = waveNm(hi, lo);
+      var col = spectralColor(nm);
+      ctx.strokeStyle = col; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2 - 2); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y2); ctx.lineTo(x - 5, y2 - 9); ctx.lineTo(x + 5, y2 - 9);
+      ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+
+      ctx.fillStyle = col; ctx.font = '11px Consolas, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(nm.toFixed(0) + 'nm', x, y2 - 12);
+    });
+
+    ctx.fillStyle = '#6b7ba4'; ctx.font = '11px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('能量 ↑', 12, 10);
+  }
+
+  function drawSpec() {
+    var cv = $('cvSpec'); if (!cv) return;
+    var f = fitCanvas(cv, 100), ctx = f.ctx, w = f.w;
+    ctx.clearRect(0, 0, w, 110);
+
+    var LMIN = 250, LMAX = 800, padL = 40, padR = 20;
+    var lg = Math.log10;
+    var xOf = function (nm) { return padL + (lg(nm) - lg(LMIN)) / (lg(LMAX) - lg(LMIN)) * (w - padL - padR); };
+
+    ctx.strokeStyle = '#2a3556'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, 74); ctx.lineTo(w - padR, 74); ctx.stroke();
+
+    ctx.fillStyle = '#6b7ba4'; ctx.font = '10.5px Consolas, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    [260, 300, 400, 500, 589, 700].forEach(function (t) {
+      var x = xOf(t);
+      ctx.beginPath(); ctx.strokeStyle = '#1d2643'; ctx.moveTo(x, 74); ctx.lineTo(x, 80); ctx.stroke();
+      ctx.fillText(t + '', x, 82);
+    });
+
+    var gx0 = xOf(380), gx1 = xOf(780);
+    var grad = ctx.createLinearGradient(gx0, 0, gx1, 0);
+    grad.addColorStop(0, 'rgba(130,90,255,.26)');
+    grad.addColorStop(0.3, 'rgba(40,120,255,.26)');
+    grad.addColorStop(0.55, 'rgba(40,220,140,.24)');
+    grad.addColorStop(0.8, 'rgba(255,230,60,.26)');
+    grad.addColorStop(1, 'rgba(255,60,60,.26)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(gx0, 30, gx1 - gx0, 44);
+
+    Object.keys(L4.drawn).forEach(function (key) {
+      var p = key.split('|');
+      var nm = waveNm(p[0], p[1]);
+      var x = xOf(Math.max(LMIN, Math.min(LMAX, nm)));
+      var col = spectralColor(nm);
+      ctx.strokeStyle = col; ctx.lineWidth = 2.6;
+      ctx.shadowColor = col; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.moveTo(x, 34); ctx.lineTo(x, 74); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = col; ctx.font = '10.5px Consolas, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(nm.toFixed(0), x, 30);
+    });
+
+    ctx.fillStyle = '#6b7ba4'; ctx.font = '10.5px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('波长 (nm, 对数) →', 6, 6);
+  }
+
+  window.addEventListener('resize', function () {
+    if (S.lv === 3) { drawLevel(); drawSpec(); }
+  });
+
+  function finishGame() {
+    var d1 = waveNm('3P', '3S');
+    var d2 = waveNm('4P', '3S');
+    var d3 = waveNm('5P', '3S');
+    showModal(
+      '<h2>🏆 通关！钠的光谱报告</h2>' +
+      '<div class="body">' +
+        '<div class="big">' + S.score + ' 分</div>' +
+        '<p>主线系三条谱线的计算（λ = 1/ΔT，ΔT 用 cm⁻¹）：</p>' +
+        '<div class="kv">' +
+          '<div class="kvr"><span>3P(16973) → 3S(0)</span><b>' + d1.toFixed(1) + ' nm（黄）</b></div>' +
+          '<div class="kvr"><span>4P(30273) → 3S(0)</span><b>' + d2.toFixed(1) + ' nm（紫外）</b></div>' +
+          '<div class="kvr"><span>5P(35041) → 3S(0)</span><b>' + d3.toFixed(1) + ' nm（紫外）</b></div>' +
+        '</div>' +
+        '<p style="margin-top:14px">' + d1.toFixed(0) + ' nm 就是钠灯、路灯里那条<b>橙黄色光</b>，也是化学焰色反应里钠的黄色。</p>' +
+        '<p style="color:#93a2c7">再进一步：3P 其实分裂成 3P<sub>1/2</sub> 和 3P<sub>3/2</sub>，两者差 17.2 cm⁻¹，' +
+          '所以这条黄光是一对双线——589.0 nm 和 589.6 nm，叫 <b>D 线</b>。普通光谱仪看不出来，用光栅才分得开。</p>' +
+      '</div>',
+      [
+        { label: '再来一次', fn: function () { closeModal(); location.reload(); } },
+        { label: '回到合集', ghost: true, fn: function () { location.href = 'index.html'; } }
+      ]
+    );
+  }
+
+  function intro() {
+    showModal(
+      '<h2>🧪 情景：钠灯为什么是黄的？</h2>' +
+      '<div class="body">' +
+        '<p>实验室里那盏钠灯亮起来是橙黄色的，而氢灯是紫红色的。同样是原子发光，为什么颜色差这么多？</p>' +
+        '<p style="margin-bottom:6px">四关任务：</p>' +
+        '<ul>' +
+          '<li><b>第 1 关</b>　找出钠的基态电子组态，理解"单价电子"</li>' +
+          '<li><b>第 2 关</b>　按真实项值把 6 个能级排好序</li>' +
+          '<li><b>第 3 关</b>　认出主线系、辅线系、柏格曼系</li>' +
+          '<li><b>第 4 关</b>　画出主线系，算出那条黄光的波长</li>' +
+        '</ul>' +
+      '</div>',
+      [{ label: '开始闯关', fn: function () { closeModal(); goto(0); } }]
+    );
+  }
+
+  setHud();
+  intro();
+})();
+</script>
+</body>
+</html>

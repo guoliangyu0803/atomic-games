@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>塞曼效应 · 光谱解密闯关</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0b1020;--card:#151d36;--card2:#1b2542;--line:#2a3556;
+    --txt:#e9eefc;--muted:#93a2c7;--teal:#2dd4bf;--gold:#f6c453;
+    --red:#fb7185;--green:#34d399;--blue:#60a5fa;--violet:#a78bfa;
+  }
+  html,body{margin:0;min-height:100%}
+  body{
+    background:radial-gradient(1100px 560px at 50% -12%,#1e2c52,#0b1020 62%);
+    color:var(--txt);font-family:'Segoe UI','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+  .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .back{color:var(--muted);text-decoration:none;font-size:13.5px;border:1px solid var(--line);padding:6px 11px;border-radius:10px}
+  .back:hover{color:var(--txt);border-color:#3c5185}
+  h1{font-size:19px;margin:0;flex:1;min-width:140px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--muted)}
+  .chip b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  .steps{display:flex;gap:8px;margin-bottom:14px}
+  .step{height:6px;flex:1;border-radius:99px;background:#1d2643;transition:background .3s}
+  .step.done{background:linear-gradient(90deg,#2dd4bf,#60a5fa)}
+  .step.cur{background:linear-gradient(90deg,#f6c453,#f59e0b)}
+
+  .panel{background:linear-gradient(180deg,var(--card),#121a30);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .qh{font-size:12px;letter-spacing:.16em;color:var(--teal);text-transform:uppercase;margin-bottom:8px}
+  .qt{font-size:15px;line-height:1.85;color:var(--txt);margin:0}
+  .qt code,.mono{font-family:Consolas,'Courier New',monospace;background:#0d1428;border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;font-size:13.5px;color:#a5f3ea}
+  .formula{
+    background:#0d1428;border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    margin:14px 0;font-family:Consolas,monospace;font-size:14px;color:#a5f3ea;line-height:1.9;overflow-x:auto;
+  }
+
+  .choices{display:grid;gap:10px;margin-top:16px}
+  .choice{
+    text-align:left;appearance:none;border:1px solid var(--line);background:#101830;color:#cfd9f0;
+    border-radius:12px;padding:14px 16px;font-size:14.5px;cursor:pointer;font-family:Consolas,monospace;
+    transition:.15s;
+  }
+  .choice:hover:not(:disabled){border-color:#3c5185;background:#152040;color:#fff}
+  .choice.ok{border-color:#2f9e83;background:#0f3b30;color:#a7f3d0}
+  .choice.no{border-color:#7f2d3d;background:#3a1420;color:#fecdd3}
+  .choice:disabled{cursor:default}
+
+  .rows{margin:16px 0 6px;display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#101830;
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+  .row .lab{flex:1;min-width:170px;font-size:14px;color:#cfd9f0;font-family:Consolas,monospace}
+  .row input{
+    background:#0b1224;border:1px solid var(--line);color:var(--txt);border-radius:9px;
+    padding:9px 11px;font-size:15px;width:190px;font-family:Consolas,monospace;
+  }
+  .row input.wide{width:260px}
+  .row input:focus{outline:none;border-color:var(--teal)}
+  .row.right{border-color:#1f6f5c;background:#0c2a25}
+  .row.right input{border-color:#2f9e83;color:#a7f3d0}
+  .row.wrong{border-color:#7f2d3d;background:#2a1018}
+  .row .mark{width:18px;text-align:center}
+  .note{color:#7c8cb8;font-size:12.5px;margin-top:8px}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 4px}
+  .counter{margin-left:auto;color:var(--muted);font-size:13.5px}
+  .counter b{color:var(--teal)}
+
+  canvas{display:block;width:100%;border-radius:12px;background:#0a1122;border:1px solid var(--line)}
+  #cvZ{cursor:pointer;touch-action:manipulation}
+  .cap{color:#6b7ba4;font-size:12.5px;margin:8px 2px 0}
+
+  .fb{margin-top:14px;border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.75;
+    border:1px solid var(--line);background:#0f1730;color:var(--muted);min-height:22px}
+  .fb.ok{border-color:#1f6f5c;background:#0c2a25;color:#a7f3d0}
+  .fb.bad{border-color:#7f2d3d;background:#2a1018;color:#fecdd3}
+
+  .btn{
+    appearance:none;border:1px solid transparent;border-radius:12px;padding:11px 20px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+    background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04211d;transition:.15s;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.08)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--txt)}
+  .btn.ghost:hover{border-color:#3c5185}
+
+  .modal{position:fixed;inset:0;background:rgba(6,10,20,.74);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .modal.show{display:flex}
+  .modal .box{background:var(--card2);border:1px solid var(--line);border-radius:18px;
+    max-width:610px;width:100%;padding:24px;max-height:86vh;overflow:auto}
+  .modal h2{margin:0 0 12px;font-size:19px}
+  .modal .body{color:#cfd9f0;font-size:14px;line-height:1.9}
+  .modal .body ul{margin:8px 0 0;padding-left:20px}
+  .modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  .big{font-size:26px;font-weight:800;color:var(--teal);margin:6px 0 2px}
+  .kv{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+  .kvr{background:#101830;border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+    font-size:13px;font-family:Consolas,monospace;color:#cfd9f0;display:flex;justify-content:space-between;gap:10px}
+  .kvr b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 合集</a>
+    <h1>🧲 塞曼效应 · 光谱解密</h1>
+    <div class="hud">
+      <span class="chip">第 <b id="hudLv">1</b> / 6 关</span>
+      <span class="chip">用时 <b id="hudTime">00:00</b></span>
+      <span class="chip">得分 <b id="hudScore">0</b></span>
+    </div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step cur"></div><div class="step"></div><div class="step"></div>
+    <div class="step"></div><div class="step"></div><div class="step"></div>
+  </div>
+
+  <div id="stage"></div>
+  <div class="fb" id="fb">一条谱线放进磁场，为什么会裂成好几条？</div>
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 物理设定：³P₂ → ³S₁ ----------
+  var UPPER = { name: '³P₂', L: 1, S: 1, J: 2, g: 1.5, n: 5 };   // 5 个 m_J 子能级
+  var LOWER = { name: '³S₁', L: 0, S: 1, J: 1, g: 2.0, n: 3 };   // 3 个 m_J 子能级
+
+  function mJList(J) {
+    var a = [];
+    for (var m = J; m >= -J; m--) a.push(m);
+    return a;
+  }
+  var UP_M = mJList(UPPER.J);      // [2,1,0,-1,-2]
+  var LO_M = mJList(LOWER.J);      // [1,0,-1]
+  var UP_MG = UP_M.map(function (m) { return m * UPPER.g; });
+  var LO_MG = LO_M.map(function (m) { return m * LOWER.g; });
+
+  var S = { lv: 0, score: 0, wrongInLv: 0, t0: Date.now() };
+  var L6 = { drawn: {}, sel: null };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $('stage'), fb = $('fb'), modal = $('modal'), modalBox = $('modalBox');
+
+  function setFb(msg, kind) { fb.innerHTML = msg; fb.className = 'fb' + (kind ? ' ' + kind : ''); }
+
+  function setHud() {
+    $('hudLv').textContent = Math.min(S.lv + 1, 6);
+    $('hudScore').textContent = S.score;
+    var steps = $('steps').children;
+    for (var i = 0; i < steps.length; i++) {
+      steps[i].className = 'step' + (i < S.lv ? ' done' : (i === S.lv ? ' cur' : ''));
+    }
+  }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var s = Math.floor((Date.now() - S.t0) / 1000);
+    $('hudTime').textContent = pad2(Math.floor(s / 60)) + ':' + pad2(s % 60);
+  }
+  setInterval(tick, 500); tick();
+
+  function showModal(html, actions) {
+    modalBox.innerHTML = html + '<div class="acts" id="mActs"></div>';
+    var acts = $('mActs');
+    (actions || []).forEach(function (a) {
+      var b = document.createElement('button');
+      b.className = 'btn' + (a.ghost ? ' ghost' : '');
+      b.textContent = a.label;
+      b.onclick = function () { if (a.fn) a.fn(); };
+      acts.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
+  function closeModal() { modal.classList.remove('show'); }
+
+  function addScore(full) {
+    var gain = Math.max(2, full - 2 * S.wrongInLv);
+    S.score += gain; setHud(); return gain;
+  }
+  function goto(lv) {
+    S.lv = lv; S.wrongInLv = 0; setHud();
+    if (lv === 0) renderL1();
+    else if (lv === 1) renderL2();
+    else if (lv === 2) renderL3();
+    else if (lv === 3) renderL4();
+    else if (lv === 4) renderL5();
+    else renderL6();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ---------- 数字/列表解析 ----------
+  function parseNum(s) {
+    if (s == null) return NaN;
+    s = String(s).trim().replace(/[−–—]/g, '-').replace(/[，,]/g, '').replace(/\s/g, '');
+    if (!s) return NaN;
+    var m = s.match(/^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);
+    if (m) return parseFloat(m[1]) / parseFloat(m[2]);
+    return parseFloat(s);
+  }
+  function parseList(s) {
+    return String(s || '').split(/[,，、;；\s]+/).filter(function (x) { return x.trim() !== ''; })
+      .map(function (x) { return parseNum(x); });
+  }
+  function sameSet(a, b, tol) {
+    if (a.length !== b.length) return false;
+    if (a.some(function (v) { return !isFinite(v); })) return false;
+    var x = a.slice().sort(function (p, q) { return p - q; });
+    var y = b.slice().sort(function (p, q) { return p - q; });
+    for (var i = 0; i < x.length; i++) if (Math.abs(x[i] - y[i]) > tol) return false;
+    return true;
+  }
+
+  // ============ 第 1 关：读懂项符号 ============
+  function renderL1() {
+    var opts = [
+      'S = 1，L = 1，J = 2',
+      'S = 2，L = 1，J = 3',
+      'S = 1，L = 2，J = 1',
+      'S = 3，L = 0，J = 2'
+    ];
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 1 关 · 读懂项符号</div>' +
+        '<p class="qt">光谱项写作 <span class="mono"><sup>2S+1</sup>L<sub>J</sub></span>。' +
+        '这条谱线的上能级是 <b>³P₂</b>，按这个约定，它的 S、L、J 各是多少？</p>' +
+        '<div class="choices">' +
+          opts.map(function (o, i) { return '<button class="choice" data-i="' + i + '">' + o + '</button>'; }).join('') +
+        '</div>' +
+        '<div class="note">提醒：左上角是 2S+1（多重度），字母是 L（S=0, P=1, D=2…），右下角是 J。</div>' +
+      '</div>';
+
+    stage.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i;
+        if (i === 0) {
+          b.classList.add('ok');
+          stage.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+          var gain = addScore(5);
+          setFb('✓ 正确。2S+1 = 3 → S = 1；P → L = 1；右下角 J = 2。' +
+                '所以上能级有 2J+1 = 5 个子能级。+' + gain + ' 分。', 'ok');
+          setTimeout(function () { goto(1); }, 1300);
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 800);
+          setFb('✗ 不对。先把 ³ 拆成 2S+1 = 3 得到 S = 1。', 'bad');
+        }
+      };
+    });
+    setFb('提示：³ 表示 2S+1 = 3。');
+  }
+
+  // ============ 第 2 关：朗德 g 因子 ============
+  function renderL2() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 2 关 · 算朗德 g 因子</div>' +
+        '<p class="qt">能级在磁场中的移动量正比于 g·m<sub>J</sub>·μ<sub>B</sub>B，其中 g 由朗德公式给出：</p>' +
+        '<div class="formula">g = 1 + [ J(J+1) + S(S+1) − L(L+1) ] / [ 2J(J+1) ]</div>' +
+        '<div class="rows">' +
+          '<div class="row" id="rgU"><span class="lab">g(³P₂)</span>' +
+            '<input type="text" inputmode="decimal" id="gU" placeholder="如 1.5" autocomplete="off">' +
+            '<span class="unit">' + '' + '</span><span class="mark"></span></div>' +
+          '<div class="row" id="rgL"><span class="lab">g(³S₁)</span>' +
+            '<input type="text" inputmode="decimal" id="gL" placeholder="如 2" autocomplete="off">' +
+            '<span class="unit"></span><span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub2">提交</button>' +
+          '<button class="btn ghost" id="hint2">看提示</button></div>' +
+      '</div>';
+
+    $('sub2').onclick = check2;
+    $('hint2').onclick = function () {
+      setFb('上能级：J=2,S=1,L=1 → g = 1 + (6+2−2)/(12) = 1 + 0.5 = 1.5。' +
+            '下能级是 S 态，L=0，可以验证 g 恰好等于 2。');
+    };
+    ['gU', 'gL'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') check2(); });
+    });
+    setFb('两处都算对才过关，填 3/2 这样的分数也认。');
+  }
+
+  function check2() {
+    var a = parseNum($('gU').value), b = parseNum($('gL').value);
+    var ok1 = isFinite(a) && Math.abs(a - UPPER.g) < 0.01;
+    var ok2 = isFinite(b) && Math.abs(b - LOWER.g) < 0.01;
+    $('rgU').classList.toggle('right', ok1); $('rgU').classList.toggle('wrong', !ok1);
+    $('rgL').classList.toggle('right', ok2); $('rgL').classList.toggle('wrong', !ok2);
+
+    if (ok1 && ok2) {
+      $('rgU').querySelector('.mark').textContent = '✓';
+      $('rgL').querySelector('.mark').textContent = '✓';
+      var gain = addScore(10);
+      setFb('✓ g(³P₂) = 1.5，g(³S₁) = 2。注意 g 不能随便取：它由 L、S、J 决定。+' + gain + ' 分。', 'ok');
+      setTimeout(function () { goto(2); }, 1200);
+    } else {
+      S.wrongInLv++;
+      setFb('✗ 还不对。分别把 (L,S,J) 代进公式，注意 J(J+1) 在分子和分母里都出现。', 'bad');
+    }
+  }
+
+  // ============ 第 3 关：裂成几条 ============
+  function renderL3() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 3 关 · 裂成几条</div>' +
+        '<p class="qt">角动量 J 在磁场中有 2J+1 个取向，对应 m<sub>J</sub> = J, J−1, …, −J。' +
+        '上、下能级各裂成几条？</p>' +
+        '<div class="rows">' +
+          '<div class="row" id="r3U"><span class="lab">³P₂ 的分量数</span>' +
+            '<input type="text" inputmode="numeric" id="nU" placeholder="填整数" autocomplete="off">' +
+            '<span class="mark"></span></div>' +
+          '<div class="row" id="r3L"><span class="lab">³S₁ 的分量数</span>' +
+            '<input type="text" inputmode="numeric" id="nL" placeholder="填整数" autocomplete="off">' +
+            '<span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub3">提交</button></div>' +
+      '</div>';
+
+    $('sub3').onclick = function () {
+      var a = parseNum($('nU').value), b = parseNum($('nL').value);
+      var ok1 = a === 5, ok2 = b === 3;
+      $('r3U').classList.toggle('right', ok1); $('r3U').classList.toggle('wrong', !ok1);
+      $('r3L').classList.toggle('right', ok2); $('r3L').classList.toggle('wrong', !ok2);
+      if (ok1 && ok2) {
+        var gain = addScore(8);
+        setFb('✓ 2×2+1 = 5，2×1+1 = 3。5 条对上 3 条，理论上有 15 种组合，' +
+              '但受选择定则限制，只有一部分是允许的——下一关就排出来。+' + gain + ' 分。', 'ok');
+        setTimeout(function () { goto(3); }, 1400);
+      } else {
+        S.wrongInLv++;
+        setFb('✗ 用 2J+1 算，别和多重度 2S+1 搞混。', 'bad');
+      }
+    };
+    setFb('提示：m_J 的取值个数就是分量数。');
+  }
+
+  // ============ 第 4 关：列出 m_J ============
+  function renderL4() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 4 关 · 列出 m<sub>J</sub></div>' +
+        '<p class="qt">把两个能级的 m<sub>J</sub> 全部写出来，用逗号隔开（顺序不限，例如 <span class="mono">1,0,-1</span>）。</p>' +
+        '<div class="rows">' +
+          '<div class="row" id="r4U"><span class="lab">³P₂ 的 m<sub>J</sub></span>' +
+            '<input type="text" class="wide" id="mjU" placeholder="用逗号分隔" autocomplete="off"><span class="mark"></span></div>' +
+          '<div class="row" id="r4L"><span class="lab">³S₁ 的 m<sub>J</sub></span>' +
+            '<input type="text" class="wide" id="mjL" placeholder="用逗号分隔" autocomplete="off"><span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub4">提交</button></div>' +
+      '</div>';
+
+    $('sub4').onclick = function () {
+      var a = parseList($('mjU').value), b = parseList($('mjL').value);
+      var ok1 = sameSet(a, UP_M, 0.001), ok2 = sameSet(b, LO_M, 0.001);
+      $('r4U').classList.toggle('right', ok1); $('r4U').classList.toggle('wrong', !ok1);
+      $('r4L').classList.toggle('right', ok2); $('r4L').classList.toggle('wrong', !ok2);
+      if (ok1 && ok2) {
+        var gain = addScore(10);
+        setFb('✓ 正确：上能级 2,1,0,−1,−2；下能级 1,0,−1。+' + gain + ' 分。', 'ok');
+        setTimeout(function () { goto(4); }, 1200);
+      } else {
+        S.wrongInLv++;
+        setFb('✗ 检查个数和取值：m<sub>J</sub> 从 +J 一格一格降到 −J，中间不能漏 0。', 'bad');
+      }
+    };
+    setFb('提示：−1 和 -1 都认，但不要把 j 和 m 搞混。');
+  }
+
+  // ============ 第 5 关：算 m_J·g ============
+  function renderL5() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 5 关 · 能级移动量</div>' +
+        '<p class="qt">每个子能级的移动量是 g·m<sub>J</sub>·μ<sub>B</sub>B，所以关键是 <b>m<sub>J</sub>·g</b>。' +
+        '把两个能级的 m<sub>J</sub>·g 都算出来（可以写分数，如 <span class="mono">3/2</span>）。</p>' +
+        '<div class="rows">' +
+          '<div class="row" id="r5U"><span class="lab">³P₂ 的 m<sub>J</sub>·g（g=1.5）</span>' +
+            '<input type="text" class="wide" id="mgU" placeholder="用逗号分隔" autocomplete="off"><span class="mark"></span></div>' +
+          '<div class="row" id="r5L"><span class="lab">³S₁ 的 m<sub>J</sub>·g（g=2）</span>' +
+            '<input type="text" class="wide" id="mgL" placeholder="用逗号分隔" autocomplete="off"><span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub5">提交</button></div>' +
+      '</div>';
+
+    $('sub5').onclick = function () {
+      var a = parseList($('mgU').value), b = parseList($('mgL').value);
+      var ok1 = sameSet(a, UP_MG, 0.011), ok2 = sameSet(b, LO_MG, 0.011);
+      $('r5U').classList.toggle('right', ok1); $('r5U').classList.toggle('wrong', !ok1);
+      $('r5L').classList.toggle('right', ok2); $('r5L').classList.toggle('wrong', !ok2);
+      if (ok1 && ok2) {
+        var gain = addScore(12);
+        setFb('✓ 正确：上能级 3, 1.5, 0, −1.5, −3；下能级 2, 0, −2。' +
+              '接下来连跃迁，就能看到谱线为什么是等间距的。+' + gain + ' 分。', 'ok');
+        setTimeout(function () { goto(5); }, 1400);
+      } else {
+        S.wrongInLv++;
+        setFb('✗ 每个 m<sub>J</sub> 乘对应的 g 就行，注意正负号。', 'bad');
+      }
+    };
+    setFb('提示：1.5 × 2 = 3，1.5 × 1 = 1.5 …');
+  }
+
+  // ============ 第 6 关：连跃迁 ============
+  function fitCanvas(cv, cssH) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = cv.getBoundingClientRect();
+    var w = Math.max(280, rect.width || cv.clientWidth || 600);
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(cssH * dpr);
+    cv.style.height = cssH + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: cssH };
+  }
+
+  var GEOM = { top: 96, bot: 250, spec: 330 };
+  var HIT = 26;
+
+  function upX(w, i) { return 120 + i * ((w - 200) / 4); }
+  function loX(w, i) { return 120 + i * ((w - 200) / 2); }
+
+  function renderL6() {
+    L6.drawn = {}; L6.sel = null;
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 6 关 · 连出允许跃迁</div>' +
+        '<p class="qt">选择定则：<span class="mono">Δm<sub>J</sub> = 0, ±1</span>。' +
+        '先点上面一个分量、再点下面一个分量，把 <b>9 条</b>允许跃迁全部连出来。</p>' +
+        '<div class="toolbar">' +
+          '<button class="btn ghost" id="undo6" style="padding:8px 14px;font-size:13px">撤回</button>' +
+          '<span class="counter">已连 <b id="cnt6">0</b> / 9 条</span>' +
+        '</div>' +
+        '<canvas id="cvZ"></canvas>' +
+        '<p class="cap">上：³P₂ 的 5 个 m<sub>J</sub> 分量；下：³S₁ 的 3 个分量。' +
+          '最下方是最终光谱里的 9 条谱线位置。</p>' +
+      '</div>';
+
+    $('undo6').onclick = function () {
+      var ks = Object.keys(L6.drawn);
+      if (!ks.length) { setFb('还没连。'); return; }
+      delete L6.drawn[ks[ks.length - 1]];
+      L6.sel = null; draw();
+      $('cnt6').textContent = Object.keys(L6.drawn).length;
+      setFb('已撤回一条。');
+    };
+    $('cvZ').addEventListener('click', onClick);
+    draw();
+    setFb('提示：Δm 是"上面减下面"，等于 0、+1、-1 都允许，差 2 就不允许。');
+  }
+
+  function onClick(e) {
+    var cv = $('cvZ');
+    var r = cv.getBoundingClientRect();
+    var x = e.clientX - r.left, y = e.clientY - r.top;
+    var w = r.width;
+
+    // 先判断点上排还是下排
+    var upIdx = -1, loIdx = -1;
+    var du = 1e9, dl = 1e9;
+    for (var i = 0; i < UP_MG.length; i++) {
+      var d = Math.abs(x - upX(w, i));
+      if (d < du) { du = d; upIdx = i; }
+    }
+    for (var j = 0; j < LO_MG.length; j++) {
+      var d2 = Math.abs(x - loX(w, j));
+      if (d2 < dl) { dl = d2; loIdx = j; }
+    }
+
+    var nearUp = du < HIT && Math.abs(y - GEOM.top) < 40;
+    var nearLo = dl < HIT && Math.abs(y - GEOM.bot) < 40;
+
+    if (!nearUp && !nearLo) { setFb('请点到上面或下面的刻度标记上。'); return; }
+
+    if (nearUp) {
+      L6.sel = { row: 'up', i: upIdx };
+      draw();
+      setFb('已选中上能级 m=' + UP_M[upIdx] + '，再点下面一个分量。');
+      return;
+    }
+    if (!L6.sel || L6.sel.row !== 'up') {
+      setFb('请先点上面的分量，再点下面的。');
+      return;
+    }
+
+    var ui = L6.sel.i, li = loIdx;
+    L6.sel = null;
+
+    var dm = UP_M[ui] - LO_M[li];
+    if (Math.abs(dm) > 1) {
+      draw();
+      setFb('✗ Δm = ' + UP_M[ui] + ' − (' + LO_M[li] + ') = ' + dm + '，违反了 Δm = 0, ±1。', 'bad');
+      return;
+    }
+
+    var key = ui + '-' + li;
+    if (L6.drawn[key]) { draw(); setFb('这条已经连过了。'); return; }
+
+    L6.drawn[key] = dm;
+    draw();
+    var n = Object.keys(L6.drawn).length;
+    $('cnt6').textContent = n;
+
+    if (n === 9) {
+      var gain = addScore(20);
+      setFb('✓ 9 条允许跃迁全部连出！看出规律了吗：谱线是<b>等间距</b>的。+' + gain + ' 分。', 'ok');
+      setTimeout(finish, 900);
+    } else {
+      var dmg = (UP_MG[ui] - LO_MG[li]);
+      setFb('✓ Δm = ' + (dm > 0 ? '+' + dm : dm) + '，Δmg = ' + dmg.toFixed(1) + '。还剩 ' + (9 - n) + ' 条。', 'ok');
+    }
+  }
+
+  function draw() {
+    var cv = $('cvZ'); if (!cv) return;
+    var f = fitCanvas(cv, 400), ctx = f.ctx, w = f.w;
+    ctx.clearRect(0, 0, w, 410);
+
+    var topY = GEOM.top, botY = GEOM.bot;
+
+    // 左侧"无磁场"参考
+    ctx.strokeStyle = '#4b5a85'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(24, topY); ctx.lineTo(72, topY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(24, botY); ctx.lineTo(72, botY); ctx.stroke();
+    ctx.fillStyle = '#7c8cb8'; ctx.font = '11px Consolas, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('无磁场 B=0', 22, topY - 26);
+    ctx.fillText('³P₂', 26, topY - 8);
+    ctx.fillText('³S₁', 26, botY - 8);
+
+    // 分裂后的上能级
+    for (var i = 0; i < UP_MG.length; i++) {
+      var x = upX(w, i);
+      ctx.strokeStyle = '#2a3556'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(72, topY); ctx.lineTo(x, topY); ctx.stroke();
+      ctx.setLineDash([]);
+
+      var sel = L6.sel && L6.sel.row === 'up' && L6.sel.i === i;
+      ctx.beginPath();
+      ctx.arc(x, topY, sel ? 7 : 5, 0, Math.PI * 2);
+      ctx.fillStyle = sel ? '#2dd4bf' : '#60a5fa';
+      ctx.fill();
+      if (sel) { ctx.strokeStyle = '#a7f3d0'; ctx.lineWidth = 2; ctx.stroke(); }
+
+      ctx.fillStyle = sel ? '#a7f3d0' : '#cfd9f0';
+      ctx.font = '700 12px Consolas, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText('m=' + UP_M[i], x, topY - 12);
+      ctx.fillStyle = '#7c8cb8'; ctx.font = '10px Consolas, monospace';
+      ctx.textBaseline = 'top';
+      ctx.fillText('mg=' + UP_MG[i], x, topY + 10);
+    }
+
+    // 下能级
+    for (var j = 0; j < LO_MG.length; j++) {
+      var x2 = loX(w, j);
+      ctx.strokeStyle = '#2a3556'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(72, botY); ctx.lineTo(x2, botY); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath(); ctx.arc(x2, botY, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#f6c453'; ctx.fill();
+
+      ctx.fillStyle = '#cfd9f0'; ctx.font = '700 12px Consolas, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText('m=' + LO_M[j], x2, botY + 12);
+      ctx.fillStyle = '#7c8cb8'; ctx.font = '10px Consolas, monospace';
+      ctx.fillText('mg=' + LO_MG[j], x2, botY + 27);
+    }
+
+    // 已连的跃迁
+    Object.keys(L6.drawn).forEach(function (key) {
+      var p = key.split('-').map(Number);
+      var dm = L6.drawn[key];
+      var x1 = upX(w, p[0]), x2 = loX(w, p[1]);
+      var col = dm === 0 ? '#a78bfa' : (dm > 0 ? '#60a5fa' : '#fb7185');
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(x1, topY + 6); ctx.lineTo(x2, botY - 6); ctx.stroke();
+
+      // 在中点标注 σ/π
+      var mx = (x1 + x2) / 2, my = (topY + botY) / 2;
+      if (Math.abs(x1 - x2) > 30) {
+        ctx.fillStyle = col; ctx.font = '10px Consolas, monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(dm === 0 ? 'π' : (dm > 0 ? 'σ⁺' : 'σ⁻'), mx, my);
+      }
+    });
+
+    // 光谱：Δmg ∈ [-3,3] 上的 9 条线
+    var specY = GEOM.spec;
+    var padL = 60, padR = 40;
+    var sx = function (v) { return padL + (v + 3) / 6 * (w - padL - padR); };
+
+    ctx.strokeStyle = '#2a3556'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, specY); ctx.lineTo(w - padR, specY); ctx.stroke();
+    ctx.fillStyle = '#6b7ba4'; ctx.font = '10px Consolas, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var t = -3; t <= 3; t++) {
+      var xx = sx(t);
+      ctx.beginPath(); ctx.strokeStyle = '#1d2643';
+      ctx.moveTo(xx, specY); ctx.lineTo(xx, specY + 5); ctx.stroke();
+      ctx.fillText(t, xx, specY + 8);
+    }
+    ctx.fillStyle = '#6b7ba4'; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText('Δmg →', w - 40, specY - 6);
+
+    Object.keys(L6.drawn).forEach(function (key) {
+      var p = key.split('-').map(Number);
+      var dmg = UP_MG[p[0]] - LO_MG[p[1]];
+      var xx2 = sx(dmg);
+      var dm2 = L6.drawn[key];
+      var col2 = dm2 === 0 ? '#a78bfa' : (dm2 > 0 ? '#60a5fa' : '#fb7185');
+      ctx.strokeStyle = col2; ctx.lineWidth = 2.4;
+      ctx.shadowColor = col2; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.moveTo(xx2, specY - 34); ctx.lineTo(xx2, specY); ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+
+    ctx.fillStyle = '#7c8cb8'; ctx.font = '10px Consolas, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('光谱（共 9 条，等间距）', 12, specY - 52);
+  }
+
+  window.addEventListener('resize', function () { if (S.lv === 5) draw(); });
+
+  function finish() {
+    showModal(
+      '<h2>🏆 通关！塞曼效应报告完成</h2>' +
+      '<div class="body">' +
+        '<div class="big">' + S.score + ' 分</div>' +
+        '<p>这条 ³P₂ → ³S₁ 谱线在磁场中的完整图像：</p>' +
+        '<div class="kv">' +
+          '<div class="kvr"><span>朗德 g 因子</span><b>1.5 / 2</b></div>' +
+          '<div class="kvr"><span>子能级数（2J+1）</span><b>5 / 3</b></div>' +
+          '<div class="kvr"><span>允许跃迁（Δm=0,±1）</span><b>9 条</b></div>' +
+          '<div class="kvr"><span>谱线间距</span><b>0.5 μ<sub>B</sub>B 等间距</b></div>' +
+        '</div>' +
+        '<p style="margin-top:14px">9 条线按偏振分成三组：<b>π</b>（Δm=0，3 条）、' +
+          '<b>σ⁺</b>（Δm=+1，3 条）、<b>σ⁻</b>（Δm=−1，3 条）。' +
+          '沿磁场方向看只能看到 σ，垂直磁场方向看三条都在。</p>' +
+        '<p style="color:#93a2c7">为什么等间距？因为这里的 Δmg 恰好是 −2 到 +2、步长 0.5。' +
+          '如果是普通塞曼效应（总自旋为 0），g 上下相同，只会裂成 3 条——这就是"正常/反常"塞曼效应的区别。</p>' +
+      '</div>',
+      [
+        { label: '再来一次', fn: function () { closeModal(); location.reload(); } },
+        { label: '回到合集', ghost: true, fn: function () { location.href = 'index.html'; } }
+      ]
+    );
+  }
+
+  function intro() {
+    showModal(
+      '<h2>🧲 情景：一条没分析完的谱线</h2>' +
+      '<div class="body">' +
+        '<p>研究员原老师留下一条 <b>³P₂ → ³S₁</b> 的谱线资料，说是在磁场里拍到的，' +
+        '还没分析完就出差了。请你把这份塞曼效应报告补完。</p>' +
+        '<p style="margin-bottom:6px">六关任务：</p>' +
+        '<ul>' +
+          '<li><b>1</b>　读懂 ³P₂ 这个项符号</li>' +
+          '<li><b>2</b>　算两个能级的朗德 g 因子</li>' +
+          '<li><b>3</b>　算各自裂成几条</li>' +
+          '<li><b>4</b>　列出 m<sub>J</sub></li>' +
+          '<li><b>5</b>　算出 m<sub>J</sub>·g</li>' +
+          '<li><b>6</b>　在分裂图上连出全部允许跃迁</li>' +
+        '</ul>' +
+      '</div>',
+      [{ label: '开始闯关', fn: function () { closeModal(); goto(0); } }]
+    );
+  }
+
+  setHud();
+  intro();
+})();
+</script>
+</body>
+</html>
