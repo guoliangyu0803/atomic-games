@@ -22,7 +22,8 @@
   .kicker{color:var(--teal);letter-spacing:.22em;font-size:12px;text-transform:uppercase}
   h1{font-size:clamp(24px,4.6vw,38px);margin:10px 0 12px;letter-spacing:.01em}
   .sub{color:var(--muted);font-size:15px;line-height:1.8;max-width:620px;margin:0 auto}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:18px;margin-top:34px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}
+  @media (max-width:720px){.grid{grid-template-columns:1fr}}
   .card{
     background:linear-gradient(180deg,var(--card),#121a30);
     border:1px solid var(--line);border-radius:18px;padding:22px;
@@ -60,7 +61,7 @@
   <header>
     <div class="kicker">Offline · Atomic Physics</div>
     <h1>⚛️ 原子物理闯关合集</h1>
-    <p class="sub">三个可在浏览器直接运行的原子物理小游戏：算能级、认线系、画跃迁。全部离线可用，手机、平板、电脑都能玩。</p>
+    <p class="sub">四个可在浏览器直接运行的原子物理小游戏：算能级、认线系、画跃迁、算磁矩。全部离线可用，手机、平板、电脑都能玩。</p>
   </header>
 
   <div class="grid">
@@ -85,6 +86,14 @@
       <h2>塞曼效应</h2>
       <p>一条 ³P₂ → ³S₁ 的谱线放进磁场后裂成 9 条。自己算朗德 g 因子、列 m_J、连允许跃迁，把分裂图画完整。</p>
       <div class="tags"><span class="tag">朗德 g</span><span class="tag">Δm=0,±1</span><span class="tag">σ± / π</span></div>
+      <div class="go">开始闯关 →</div>
+    </a>
+
+    <a class="card" href="moment.html">
+      <div class="ico">🧭</div>
+      <h2>原子的磁矩</h2>
+      <p>原子为什么是个小磁体？从轨道磁矩与自旋磁矩算起，合成朗德 g 因子，再看清"总磁矩并不平行于 J"这个经典误区。</p>
+      <div class="tags"><span class="tag">玻尔磁子</span><span class="tag">g 因子</span><span class="tag">斯特恩-盖拉赫</span></div>
       <div class="go">开始闯关 →</div>
     </a>
   </div>

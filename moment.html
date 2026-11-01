@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<title>原子的磁矩 · 闯关</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#0b1020;--card:#151d36;--card2:#1b2542;--line:#2a3556;
+    --txt:#e9eefc;--muted:#93a2c7;--teal:#2dd4bf;--gold:#f6c453;
+    --red:#fb7185;--green:#34d399;--blue:#60a5fa;--violet:#a78bfa;
+  }
+  html,body{margin:0;min-height:100%}
+  body{
+    background:radial-gradient(1100px 560px at 50% -12%,#1e2c52,#0b1020 62%);
+    color:var(--txt);font-family:'Segoe UI','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+  .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .back{color:var(--muted);text-decoration:none;font-size:13.5px;border:1px solid var(--line);padding:6px 11px;border-radius:10px}
+  .back:hover{color:var(--txt);border-color:#3c5185}
+  h1{font-size:19px;margin:0;flex:1;min-width:140px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--muted)}
+  .chip b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  .steps{display:flex;gap:8px;margin-bottom:14px}
+  .step{height:6px;flex:1;border-radius:99px;background:#1d2643;transition:background .3s}
+  .step.done{background:linear-gradient(90deg,#2dd4bf,#60a5fa)}
+  .step.cur{background:linear-gradient(90deg,#f6c453,#f59e0b)}
+
+  .panel{background:linear-gradient(180deg,var(--card),#121a30);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .qh{font-size:12px;letter-spacing:.16em;color:var(--teal);text-transform:uppercase;margin-bottom:8px}
+  .qt{font-size:15px;line-height:1.85;color:var(--txt);margin:0}
+  .qt code,.mono{font-family:Consolas,'Courier New',monospace;background:#0d1428;border:1px solid var(--line);
+    border-radius:6px;padding:1px 6px;font-size:13.5px;color:#a5f3ea}
+  .formula{
+    background:#0d1428;border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    margin:14px 0;font-family:Consolas,monospace;font-size:14px;color:#a5f3ea;line-height:2;overflow-x:auto;
+  }
+  .note{color:#7c8cb8;font-size:12.5px;margin-top:10px;line-height:1.7}
+
+  .choices{display:grid;gap:10px;margin-top:16px}
+  .choice{
+    text-align:left;appearance:none;border:1px solid var(--line);background:#101830;color:#cfd9f0;
+    border-radius:12px;padding:14px 16px;font-size:14.5px;cursor:pointer;font-family:inherit;
+    transition:.15s;line-height:1.6;
+  }
+  .choice:hover:not(:disabled){border-color:#3c5185;background:#152040;color:#fff}
+  .choice.ok{border-color:#2f9e83;background:#0f3b30;color:#a7f3d0}
+  .choice.no{border-color:#7f2d3d;background:#3a1420;color:#fecdd3}
+  .choice:disabled{cursor:default}
+
+  .rows{margin:16px 0 6px;display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#101830;
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+  .row .lab{flex:1;min-width:170px;font-size:14px;color:#cfd9f0;font-family:Consolas,monospace}
+  .row input{
+    background:#0b1224;border:1px solid var(--line);color:var(--txt);border-radius:9px;
+    padding:9px 11px;font-size:15px;width:150px;font-family:Consolas,monospace;
+  }
+  .row input:focus{outline:none;border-color:var(--teal)}
+  .row .unit{color:var(--muted);font-size:13px;white-space:nowrap}
+  .row.right{border-color:#1f6f5c;background:#0c2a25}
+  .row.right input{border-color:#2f9e83;color:#a7f3d0}
+  .row.wrong{border-color:#7f2d3d;background:#2a1018}
+  .row .mark{width:18px;text-align:center}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 4px}
+  canvas{display:block;width:100%;border-radius:12px;background:#0a1122;border:1px solid var(--line)}
+  .cap{color:#6b7ba4;font-size:12.5px;margin:8px 2px 0}
+
+  .fb{margin-top:14px;border-radius:12px;padding:12px 15px;font-size:13.5px;line-height:1.75;
+    border:1px solid var(--line);background:#0f1730;color:var(--muted);min-height:22px}
+  .fb.ok{border-color:#1f6f5c;background:#0c2a25;color:#a7f3d0}
+  .fb.bad{border-color:#7f2d3d;background:#2a1018;color:#fecdd3}
+
+  .btn{
+    appearance:none;border:1px solid transparent;border-radius:12px;padding:11px 20px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+    background:linear-gradient(180deg,#2dd4bf,#14b8a6);color:#04211d;transition:.15s;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.08)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--txt)}
+  .btn.ghost:hover{border-color:#3c5185}
+
+  .modal{position:fixed;inset:0;background:rgba(6,10,20,.74);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+  .modal.show{display:flex}
+  .modal .box{background:var(--card2);border:1px solid var(--line);border-radius:18px;
+    max-width:610px;width:100%;padding:24px;max-height:86vh;overflow:auto}
+  .modal h2{margin:0 0 12px;font-size:19px}
+  .modal .body{color:#cfd9f0;font-size:14px;line-height:1.9}
+  .modal .body ul{margin:8px 0 0;padding-left:20px}
+  .modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+  .big{font-size:26px;font-weight:800;color:var(--teal);margin:6px 0 2px}
+  .kv{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+  .kvr{background:#101830;border:1px solid var(--line);border-radius:10px;padding:9px 12px;
+    font-size:13px;font-family:Consolas,monospace;color:#cfd9f0;display:flex;justify-content:space-between;gap:10px}
+  .kvr b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="index.html">← 合集</a>
+    <h1>🧭 原子的磁矩 · 闯关</h1>
+    <div class="hud">
+      <span class="chip">第 <b id="hudLv">1</b> / 4 关</span>
+      <span class="chip">用时 <b id="hudTime">00:00</b></span>
+      <span class="chip">得分 <b id="hudScore">0</b></span>
+    </div>
+  </div>
+
+  <div class="steps" id="steps">
+    <div class="step cur"></div><div class="step"></div><div class="step"></div><div class="step"></div>
+  </div>
+
+  <div id="stage"></div>
+  <div class="fb" id="fb">磁矩是原子在磁场里"有感"的原因：塞曼效应、斯特恩-盖拉赫实验都靠它。</div>
+</div>
+
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MU_B = 9.274e-24;      // J/T
+  var MU_B_EV = 5.788e-5;    // eV/T
+
+  var S = { lv: 0, score: 0, wrongInLv: 0, t0: Date.now() };
+  var $ = function (id) { return document.getElementById(id); };
+  var stage = $('stage'), fb = $('fb'), modal = $('modal'), modalBox = $('modalBox');
+
+  function setFb(msg, kind) { fb.innerHTML = msg; fb.className = 'fb' + (kind ? ' ' + kind : ''); }
+
+  function setHud() {
+    $('hudLv').textContent = Math.min(S.lv + 1, 4);
+    $('hudScore').textContent = S.score;
+    var steps = $('steps').children;
+    for (var i = 0; i < steps.length; i++) {
+      steps[i].className = 'step' + (i < S.lv ? ' done' : (i === S.lv ? ' cur' : ''));
+    }
+  }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var s = Math.floor((Date.now() - S.t0) / 1000);
+    $('hudTime').textContent = pad2(Math.floor(s / 60)) + ':' + pad2(s % 60);
+  }
+  setInterval(tick, 500); tick();
+
+  function showModal(html, actions) {
+    modalBox.innerHTML = html + '<div class="acts" id="mActs"></div>';
+    var acts = $('mActs');
+    (actions || []).forEach(function (a) {
+      var b = document.createElement('button');
+      b.className = 'btn' + (a.ghost ? ' ghost' : '');
+      b.textContent = a.label;
+      b.onclick = function () { if (a.fn) a.fn(); };
+      acts.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
+  function closeModal() { modal.classList.remove('show'); }
+
+  function addScore(full) {
+    var gain = Math.max(2, full - 2 * S.wrongInLv);
+    S.score += gain; setHud(); return gain;
+  }
+  function goto(lv) {
+    S.lv = lv; S.wrongInLv = 0; setHud();
+    if (lv === 0) renderL1();
+    else if (lv === 1) renderL2();
+    else if (lv === 2) renderL3();
+    else renderL4();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // 数字解析：允许 1.41、1,41、√2 这种写法不支持就按普通数
+  function num(s) {
+    if (s == null) return NaN;
+    s = String(s).trim().replace(/[−–—]/g, '-').replace(/[，,]/g, '');
+    var m = s.match(/^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);
+    if (m) return parseFloat(m[1]) / parseFloat(m[2]);
+    return parseFloat(s);
+  }
+
+  // ============ 第 1 关：磁矩从哪来 ============
+  function renderL1() {
+    var opts = [
+      '只有电子绕核运动的轨道磁矩',
+      '轨道磁矩 + 电子自旋磁矩',
+      '只有原子核自旋产生的磁矩',
+      '只有电子之间的相互作用'
+    ];
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 1 关 · 磁矩从哪来</div>' +
+        '<p class="qt">原子就像一个极小的磁体。它的磁矩主要来自哪里？</p>' +
+        '<div class="choices">' +
+          opts.map(function (o, i) { return '<button class="choice" data-i="' + i + '">' + o + '</button>'; }).join('') +
+        '</div>' +
+      '</div>';
+
+    stage.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i;
+        if (i === 1) {
+          b.classList.add('ok');
+          stage.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+          var gain = addScore(5);
+          setFb('✓ 正确。电子有两类"电流"：绕核运动产生的轨道磁矩 μ<sub>L</sub>，' +
+                '以及自旋带来的自旋磁矩 μ<sub>S</sub>。+' + gain + ' 分。', 'ok');
+          setTimeout(function () { goto(1); }, 1500);
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 800);
+          setFb('✗ 不完整。电子除了绕核运动，还有内禀的自旋——而且自旋的"磁效率"比轨道运动高一倍。', 'bad');
+        }
+      };
+    });
+    setFb('提示：想想电子有哪两种"运动"。');
+  }
+
+  // ============ 第 2 关：算两个基本磁矩 ============
+  function renderL2() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 2 关 · 两个基本磁矩</div>' +
+        '<p class="qt">磁矩大小由角动量决定，但要乘上各自的 g 因子：</p>' +
+        '<div class="formula">' +
+          'μ<sub>L</sub> = g<sub>L</sub> · √(l(l+1)) · μ<sub>B</sub>　　g<sub>L</sub> = 1<br>' +
+          'μ<sub>S</sub> = g<sub>S</sub> · √(s(s+1)) · μ<sub>B</sub>　　g<sub>S</sub> ≈ 2' +
+        '</div>' +
+        '<p class="qt">取 <span class="mono">l = 1</span>、<span class="mono">s = 1/2</span>，' +
+        '算这两个磁矩各是多少 μ<sub>B</sub>（保留两位小数）。</p>' +
+        '<div class="rows">' +
+          '<div class="row" id="rA"><span class="lab">μ<sub>L</sub>（l = 1）</span>' +
+            '<input type="text" inputmode="decimal" id="iA" placeholder="如 1.41" autocomplete="off">' +
+            '<span class="unit">μ<sub>B</sub></span><span class="mark"></span></div>' +
+          '<div class="row" id="rB"><span class="lab">μ<sub>S</sub>（s = 1/2）</span>' +
+            '<input type="text" inputmode="decimal" id="iB" placeholder="如 1.73" autocomplete="off">' +
+            '<span class="unit">μ<sub>B</sub></span><span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub">提交</button>' +
+          '<button class="btn ghost" id="hint">看提示</button></div>' +
+        '<div class="note">√(l(l+1)) 里 l = 1 时是 √2 ≈ 1.414；s = 1/2 时 √(3/4) = 0.866，再乘 g<sub>S</sub> = 2。</div>' +
+      '</div>';
+
+    $('sub').onclick = check;
+    $('hint').onclick = function () {
+      setFb('μ<sub>L</sub> = 1 × √2 = 1.41 μ<sub>B</sub>；μ<sub>S</sub> = 2 × √(3/4) = 2 × 0.866 = 1.73 μ<sub>B</sub>。' +
+            '注意：自旋虽然 s 更小，磁矩却更大——这就是 g<sub>S</sub> ≈ 2 的"反常"。');
+    };
+    ['iA', 'iB'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') check(); });
+    });
+    setFb('两个数都填对才过关。');
+
+    function check() {
+      var a = num($('iA').value), b = num($('iB').value);
+      var ok1 = isFinite(a) && Math.abs(a - 1.414) <= 0.05;
+      var ok2 = isFinite(b) && Math.abs(b - 1.732) <= 0.06;
+      $('rA').classList.toggle('right', ok1); $('rA').classList.toggle('wrong', !ok1);
+      $('rB').classList.toggle('right', ok2); $('rB').classList.toggle('wrong', !ok2);
+      if (ok1 && ok2) {
+        var gain = addScore(10);
+        setFb('✓ μ<sub>L</sub> ≈ 1.41 μ<sub>B</sub>，μ<sub>S</sub> ≈ 1.73 μ<sub>B</sub>。' +
+              '自旋的 g 因子约是轨道的 2 倍，这个"2"是相对论量子力学的结论（狄拉克给出 2，' +
+              '实验精确值约 2.0023）。+' + gain + ' 分。', 'ok');
+        setTimeout(function () { goto(2); }, 1600);
+      } else {
+        S.wrongInLv++;
+        setFb('✗ 检查一下：√(l(l+1)) 算出来是 1.41；自旋那边别漏了 g<sub>S</sub> = 2。', 'bad');
+      }
+    }
+  }
+
+  // ============ 第 3 关：朗德 g 与总磁矩 ============
+  function renderL3() {
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 3 关 · 合成总磁矩</div>' +
+        '<p class="qt">对 <b>³P₂</b>（L = 1，S = 1，J = 2）：先算朗德 g 因子，再算总磁矩。</p>' +
+        '<div class="formula">' +
+          'g<sub>J</sub> = 1 + [ J(J+1) + S(S+1) − L(L+1) ] / [ 2J(J+1) ]<br>' +
+          'μ<sub>J</sub> = g<sub>J</sub> · √(J(J+1)) · μ<sub>B</sub>' +
+        '</div>' +
+        '<div class="rows">' +
+          '<div class="row" id="rG"><span class="lab">g<sub>J</sub></span>' +
+            '<input type="text" inputmode="decimal" id="iG" placeholder="如 1.5" autocomplete="off">' +
+            '<span class="unit"></span><span class="mark"></span></div>' +
+          '<div class="row" id="rM"><span class="lab">μ<sub>J</sub></span>' +
+            '<input type="text" inputmode="decimal" id="iM" placeholder="如 3.67" autocomplete="off">' +
+            '<span class="unit">μ<sub>B</sub></span><span class="mark"></span></div>' +
+        '</div>' +
+        '<div class="toolbar"><button class="btn" id="sub">提交</button>' +
+          '<button class="btn ghost" id="hint">看提示</button></div>' +
+      '</div>';
+
+    $('hint').onclick = function () {
+      setFb('g<sub>J</sub> = 1 + (6 + 2 − 2) / (2×6) = 1 + 6/12 = 1.5。' +
+            'μ<sub>J</sub> = 1.5 × √6 = 1.5 × 2.449 ≈ 3.67 μ<sub>B</sub>。');
+    };
+    $('sub').onclick = check;
+    ['iG', 'iM'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') check(); });
+    });
+    setFb('注意：μ<sub>J</sub> 里是 √(J(J+1))，不是直接乘 J。');
+
+    function check() {
+      var g = num($('iG').value), m = num($('iM').value);
+      var ok1 = isFinite(g) && Math.abs(g - 1.5) <= 0.02;
+      var ok2 = isFinite(m) && Math.abs(m - 3.674) <= 0.08;
+      $('rG').classList.toggle('right', ok1); $('rG').classList.toggle('wrong', !ok1);
+      $('rM').classList.toggle('right', ok2); $('rM').classList.toggle('wrong', !ok2);
+      if (ok1 && ok2) {
+        var gain = addScore(12);
+        setFb('✓ g<sub>J</sub> = 1.5，μ<sub>J</sub> = 1.5 × √6 ≈ 3.67 μ<sub>B</sub>。' +
+              '如果你算成 1.5 × 2 = 3，那是把 √(J(J+1)) 当成 J 了——这是最常见的错。+' + gain + ' 分。', 'ok');
+        setTimeout(function () { goto(3); }, 1600);
+      } else {
+        S.wrongInLv++;
+        setFb('✗ 再算一次。g 用公式代；μ<sub>J</sub> 那条式子里的根号别丢。', 'bad');
+      }
+    }
+  }
+
+  // ============ 第 4 关：μ_J 与 J 不共线 ============
+  function fitCanvas(cv, cssH) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = cv.getBoundingClientRect();
+    var w = Math.max(280, rect.width || cv.clientWidth || 600);
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(cssH * dpr);
+    cv.style.height = cssH + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: cssH };
+  }
+
+  function arrow(ctx, x0, y0, x1, y1, color, width, dash) {
+    ctx.save();
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width || 2;
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    if (!dash) {
+      var ang = Math.atan2(y1 - y0, x1 - x0);
+      var head = 9;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 - head * Math.cos(ang - 0.4), y1 - head * Math.sin(ang - 0.4));
+      ctx.lineTo(x1 - head * Math.cos(ang + 0.4), y1 - head * Math.sin(ang + 0.4));
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawVectors() {
+    var cv = $('cvM'); if (!cv) return;
+    var f = fitCanvas(cv, 400), ctx = f.ctx, w = f.w;
+    ctx.clearRect(0, 0, w, 410);
+
+    var ox = w / 2, oy = 148;
+    var D = Math.PI / 180;
+
+    // 按真实三角形画：|L| = |S| = √2，|J| = √6 → L 与 S 夹角必须是 60°
+    // 这样 μ_J = −(L + 2S) 与 −J 的夹角才会自动等于理论值（约 11°）
+    var mag = 55;
+    var aL = 220 * D, aS = 280 * D;
+    var Lx = Math.cos(aL) * mag, Ly = Math.sin(aL) * mag;
+    var Sx = Math.cos(aS) * mag, Sy = Math.sin(aS) * mag;
+    var Jx = Lx + Sx, Jy = Ly + Sy;
+
+    var uLx = -Lx, uLy = -Ly;                 // g_L = 1
+    var uSx = -Sx * 2, uSy = -Sy * 2;         // g_S ≈ 2
+    var uJx = uLx + uSx, uJy = uLy + uSy;
+
+    // −J 方向参考线
+    var Jn = Math.hypot(Jx, Jy);
+    var ex = -Jx / Jn * 150, ey = -Jy / Jn * 150;
+    ctx.save();
+    ctx.setLineDash([6, 6]); ctx.strokeStyle = '#8b96bd'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + ex, oy + ey); ctx.stroke();
+    ctx.restore();
+
+    // 进动示意（环绕 J 的小椭圆）
+    ctx.save();
+    ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(52,211,153,.45)'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(ox + Jx * 0.92, oy + Jy * 0.92, 9, 24, Math.atan2(Jy, Jx), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    arrow(ctx, ox, oy, ox + Lx, oy + Ly, '#60a5fa', 2.6);
+    arrow(ctx, ox, oy, ox + Sx, oy + Sy, '#f6c453', 2.6);
+    arrow(ctx, ox, oy, ox + Jx, oy + Jy, '#34d399', 3.2);
+
+    arrow(ctx, ox, oy, ox + uLx, oy + uLy, '#60a5fa', 1.6, [5, 4]);
+    arrow(ctx, ox, oy, ox + uSx, oy + uSy, '#f6c453', 1.6, [5, 4]);
+    arrow(ctx, ox, oy, ox + uJx, oy + uJy, '#fb7185', 3.4);
+
+    // 夹角弧：μ_J 与 −J 之间
+    var angU = Math.atan2(uJy, uJx);
+    var angN = Math.atan2(ey, ex);
+    ctx.save();
+    ctx.strokeStyle = '#fb7185'; ctx.lineWidth = 1.4; ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(ox, oy, 118, Math.min(angU, angN), Math.max(angU, angN));
+    ctx.stroke();
+    var mid = (angU + angN) / 2;
+    ctx.fillStyle = '#fb7185'; ctx.font = '700 12px Consolas, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('≈11°', ox + Math.cos(mid) * 136, oy + Math.sin(mid) * 136);
+    ctx.restore();
+
+    ctx.font = '700 13px Consolas, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#60a5fa'; ctx.fillText('L', ox + Lx * 1.16, oy + Ly * 1.16);
+    ctx.fillStyle = '#f6c453'; ctx.fillText('S', ox + Sx * 1.16, oy + Sy * 1.16);
+    ctx.fillStyle = '#34d399'; ctx.fillText('J', ox + Jx * 1.12, oy + Jy * 1.12);
+    ctx.fillStyle = '#fb7185'; ctx.fillText('μ_J', ox + uJx * 1.07, oy + uJy * 1.07);
+    ctx.fillStyle = '#a9b4d8'; ctx.font = '12px Consolas, monospace';
+    ctx.fillText('−J', ox + ex * 1.06, oy + ey * 1.06);
+
+    ctx.fillStyle = '#7c8cb8'; ctx.font = '12px "Segoe UI", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('实线 = 角动量　　虚线 = 磁矩（蓝 μ_L、金 μ_S）', 12, 10);
+    ctx.fillText('粉线 = 合磁矩 μ_J　　灰虚线 = −J 方向', 12, 30);
+
+    // 右侧注解（窄屏放不下就不画）
+    if (w > 620) {
+      var tx = ox + 165;
+      ctx.fillStyle = '#94a3c4'; ctx.font = '13px "Segoe UI", sans-serif';
+      ctx.fillText('μ_J 与 −J 相差约 11°', tx, 120);
+      ctx.fillText('所以 μ_J 绕 J 方向进动，', tx, 144);
+      ctx.fillText('只有沿 J 的分量能被稳定测量：', tx, 168);
+      ctx.fillStyle = '#fb7185'; ctx.font = '700 14px Consolas, monospace';
+      ctx.fillText('μ_J 投影 = -g_J√(J(J+1)) μ_B', tx, 196);
+      ctx.fillStyle = '#94a3c4'; ctx.font = '13px "Segoe UI", sans-serif';
+      ctx.fillText('这正是朗德 g 因子的来源。', tx, 222);
+    }
+  }
+
+  function renderL4() {
+    var opts = [
+      '严格沿着 J 的反方向（完全平行）',
+      '与 J 不平行，而是绕 J 方向进动',
+      '与 J 完全同向',
+      '和 J 没有任何关系'
+    ];
+    stage.innerHTML =
+      '<div class="panel">' +
+        '<div class="qh">第 4 关 · 一个经典误区</div>' +
+        '<p class="qt">下图画出 L、S 合成 J，以及对应的磁矩。' +
+        '问题：<b>总磁矩 μ<sub>J</sub> 与总角动量 J 是什么关系？</b></p>' +
+        '<canvas id="cvM"></canvas>' +
+        '<p class="cap">因为 g<sub>L</sub> = 1 而 g<sub>S</sub> ≈ 2，两个磁矩"缩短"的比例不一样，合成结果自然不在 −J 上。</p>' +
+        '<div class="choices">' +
+          opts.map(function (o, i) { return '<button class="choice" data-i="' + i + '">' + o + '</button>'; }).join('') +
+        '</div>' +
+      '</div>';
+
+    drawVectors();
+    window.addEventListener('resize', function () { if (S.lv === 3) drawVectors(); });
+
+    stage.querySelectorAll('.choice').forEach(function (b) {
+      b.onclick = function () {
+        var i = +b.dataset.i;
+        if (i === 1) {
+          b.classList.add('ok');
+          stage.querySelectorAll('.choice').forEach(function (x) { x.disabled = true; });
+          var gain = addScore(15);
+          setFb('✓ 正确。μ<sub>J</sub> 与 J 不平行，它绕着 J 进动；' +
+                '我们通常只谈它沿 J 的<b>有效分量</b>，也就是 −g<sub>J</sub>√(J(J+1))μ<sub>B</sub>。' +
+                '只有当 S = 0 或 L = 0 时，μ<sub>J</sub> 才严格反平行于 J。+' + gain + ' 分。', 'ok');
+          setTimeout(finish, 1400);
+        } else {
+          S.wrongInLv++;
+          b.classList.add('no');
+          setTimeout(function () { b.classList.remove('no'); }, 800);
+          setFb('✗ 看看图：粉色的 μ<sub>J</sub> 和灰色虚线（−J 方向）明显不重合。' +
+                '原因是 g<sub>S</sub> ≈ 2g<sub>L</sub>，两者不成同一比例。', 'bad');
+        }
+      };
+    });
+    setFb('提示：对比粉色 μ_J 和代表 −J 的灰虚线。');
+  }
+
+  // ============ 结算 ============
+  function finish() {
+    showModal(
+      '<h2>🏆 通关！原子的磁矩小结</h2>' +
+      '<div class="body">' +
+        '<div class="big">' + S.score + ' 分</div>' +
+        '<div class="kv">' +
+          '<div class="kvr"><span>玻尔磁子 μ<sub>B</sub></span><b>9.274×10⁻²⁴ J/T</b></div>' +
+          '<div class="kvr"><span>轨道 g 因子</span><b>1</b></div>' +
+          '<div class="kvr"><span>自旋 g 因子</span><b>≈ 2（实测 2.0023）</b></div>' +
+          '<div class="kvr"><span>总磁矩</span><b>μ<sub>J</sub> = g<sub>J</sub>√(J(J+1)) μ<sub>B</sub></b></div>' +
+          '<div class="kvr"><span>z 分量</span><b>μ<sub>z</sub> = −g<sub>J</sub>m<sub>J</sub> μ<sub>B</sub></b></div>' +
+        '</div>' +
+        '<p style="margin-top:14px"><b>为什么这两个式子的根号很重要？</b>' +
+          '因为 μ<sub>z</sub> 只能取离散值，原子在磁场中的能量 E = −μ<sub>z</sub>B = g<sub>J</sub>m<sub>J</sub>μ<sub>B</sub>B ' +
+          '也是离散的——这就是<b>塞曼效应</b>里谱线分裂的根源。</p>' +
+        '<p style="color:#93a2c7"><b>连接实验：</b>斯特恩-盖拉赫实验用银原子束穿过非均匀磁场，' +
+          '银原子基态是 ²S<sub>1/2</sub>（L=0，g=2，m<sub>J</sub>=±1/2），所以 μ<sub>z</sub> 只有 ±1 μ<sub>B</sub> 两个值——' +
+          '银原子束分裂成<b>两束</b>，第一次直接证明了空间量子化。</p>' +
+      '</div>',
+      [
+        { label: '再来一次', fn: function () { closeModal(); location.reload(); } },
+        { label: '回到合集', ghost: true, fn: function () { location.href = 'index.html'; } }
+      ]
+    );
+  }
+
+  function intro() {
+    showModal(
+      '<h2>🧭 情景：这台仪器为什么能"看见"原子？</h2>' +
+      '<div class="body">' +
+        '<p>原子尺度上看不到任何东西，但实验室里有办法"操纵"原子——因为原子本身是一个小磁体。' +
+        '把它放进磁场，它的能量就会改变，实验上就能测出分裂、偏转、共振。</p>' +
+        '<p style="margin-bottom:6px">四关任务：</p>' +
+        '<ul>' +
+          '<li><b>1</b>　磁矩的两个来源</li>' +
+          '<li><b>2</b>　算轨道磁矩与自旋磁矩，感受 g<sub>S</sub> ≈ 2 的反常</li>' +
+          '<li><b>3</b>　算 ³P₂ 的朗德 g 因子与总磁矩</li>' +
+          '<li><b>4</b>　看清一个经典误区：μ<sub>J</sub> 并不平行于 J</li>' +
+        '</ul>' +
+      '</div>',
+      [{ label: '开始闯关', fn: function () { closeModal(); goto(0); } }]
+    );
+  }
+
+  // 支持 ?lv=1..4 直接跳到指定关卡（老师上课可以直接投某一关）
+  setHud();
+  var deepLv = parseInt(new URLSearchParams(location.search).get('lv'), 10);
+  if (deepLv >= 1 && deepLv <= 4) {
+    goto(deepLv - 1);
+  } else {
+    intro();
+  }
+})();
+</script>
+</body>
+</html>
